@@ -174,9 +174,9 @@ namespace TIAHelper.Services
                         tiaPortal = tiaPortalProcess.Attach();
                         project = tiaPortal.Projects[0];
                     }
-                    catch
+                    catch (Exception e)
                     {
-                        Program.CancelGeneration("Could not attach to running TIAP with open project.");
+                        Program.CancelGeneration("Could not attach to running TIAP with open project.", e);
                         project = null;
                     }
                     return;
@@ -194,7 +194,7 @@ namespace TIAHelper.Services
             }
             catch (Exception e)
             {
-                Program.CancelGeneration("Could not start TIAP.");
+                Program.CancelGeneration("Could not start TIAP.", e);
                 return;
             }
 
@@ -207,9 +207,9 @@ namespace TIAHelper.Services
             {
                 project = projects.Open(projectPath);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                Program.CancelGeneration("Could not open project " + projectPath.FullName);
+                Program.CancelGeneration("Could not open project " + projectPath.FullName, e);
                 return;
             }
 

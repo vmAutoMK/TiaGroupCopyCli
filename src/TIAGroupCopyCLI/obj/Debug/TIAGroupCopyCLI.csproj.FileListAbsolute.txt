@@ -23,3 +23,6 @@ D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\bin\Debug\TIAGroupCopyCLI
 D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\bin\Debug\TIAGroupCopyCLI.application
 D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\obj\Debug\TIAGroupCopyCLI.exe.manifest
 D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\obj\Debug\TIAGroupCopyCLI.application
+C:\Source\Repos\TiaGroupCopyCli\src\TIAGroupCopyCLI\obj\Debug\TIAGroupCopyCLI.csprojAssemblyReference.cache
+C:\Source\Repos\TiaGroupCopyCli\src\TIAGroupCopyCLI\obj\Debug\TIAGroupCopyCLI.exe
+C:\Source\Repos\TiaGroupCopyCli\src\TIAGroupCopyCLI\obj\Debug\TIAGroupCopyCLI.pdb

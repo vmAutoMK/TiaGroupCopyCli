@@ -58,8 +58,10 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
         static void Main(string[] args)
         {
-            AppDomain.CurrentDomain.AssemblyResolve += MyResolverClass.MyResolver;
+            MyResolverClass.AddAssemblyResolver();
+            //AppDomain.CurrentDomain.AssemblyResolve += MyResolverClass.MyResolver;
             //AppDomain.CurrentDomain.AssemblyResolve += Resolver.OnResolve;
+            Heandlers.AddAppExceptionHaenlder();
 
 
             string assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
@@ -68,10 +70,6 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             Progress("TIA Group copy v" + fileVersion);
 
 
-
-
-            var x = System.Reflection.Assembly.GetEntryAssembly().GetName().Version.ToString();
-            var y = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
             Progress("==============");
 
             Parameters = new Parameters(args);
@@ -207,7 +205,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
                 }
                 catch(Exception e)
                 {
-                    CancelGeneration("Could not create new Group");
+                    CancelGeneration("Could not create new Group", e);
                     return;
                 }
 
@@ -314,12 +312,16 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
         }
 
-        public static void CancelGeneration(string message)
+        public static void CancelGeneration(string message, Exception e = null)
         {
             //MessageBox.Show(message);
             //GenerateText = notInProgressText;
             //ProgressMessage = "";
             Console.WriteLine(message);
+            if (e != null)
+            {
+                Console.WriteLine(e.Message);
+            }
             Console.ReadLine();
             try
             {

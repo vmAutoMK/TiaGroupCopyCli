@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace TiaOpennessHelper.Utils
 {
@@ -29,10 +30,15 @@ namespace TiaOpennessHelper.Utils
             }
             return null;
         }
+
+        public static void AddAssemblyResolver()
+        {
+            AppDomain.CurrentDomain.AssemblyResolve += MyResolver;
+        }
     }
 
 
-    public static class Resolver
+    public static class Heandlers
     {
         private const string BASE_PATH = "SOFTWARE\\Siemens\\Automation\\Openness\\";
         private static string AssemblyPath = "";
@@ -81,12 +87,12 @@ namespace TiaOpennessHelper.Utils
         {
             RegistryKey key = GetRegistryKey(BASE_PATH + version + "\\PublicAPI\\" + assembly);
 
-            if(key != null)
+            if (key != null)
             {
                 try
                 {
                     AssemblyPath = key.GetValue("Siemens.Engineering").ToString();
-                    
+
                     return AssemblyPath;
                 }
                 finally
@@ -123,8 +129,8 @@ namespace TiaOpennessHelper.Utils
         {
             var executingAssembly = Assembly.GetExecutingAssembly();
             var assemblyName = new AssemblyName(args.Name);
-            
-            if (assemblyName.Name.EndsWith("Siemens.Engineering") 
+
+            if (assemblyName.Name.EndsWith("Siemens.Engineering")
                 && string.IsNullOrEmpty(AssemblyPath) == false
                 && File.Exists(AssemblyPath))
             {
@@ -132,6 +138,30 @@ namespace TiaOpennessHelper.Utils
             }
 
             return null;
+        }
+
+        public static void AddAppExceptionHaenlder()
+        {
+            if (!Debugger.IsAttached)
+            {
+                AppDomain currentDomain = AppDomain.CurrentDomain;
+                currentDomain.UnhandledException += new UnhandledExceptionEventHandler(OnUnhandledException);
+            }
+        }
+        static void OnUnhandledException(object sender, UnhandledExceptionEventArgs args)
+        {
+            string exceptionStr = args.ExceptionObject.ToString();
+            Exception e = (Exception)args.ExceptionObject;
+            Console.WriteLine("Ups -> Runtime terminating: {0}", args.IsTerminating);
+
+            // Get stack trace for the exception with source file information
+            var st = new StackTrace(e, true);
+            // Get the top stack frame
+            var frame = st.GetFrame(0);
+            // Get the line number from the stack frame
+            var line = frame.GetFileLineNumber();
+
+            //AppDomain.Unload(AppDomain.CurrentDomain);
         }
     }
 }
