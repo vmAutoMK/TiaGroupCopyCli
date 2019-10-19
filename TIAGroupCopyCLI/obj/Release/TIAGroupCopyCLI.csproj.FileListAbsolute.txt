@@ -1,0 +1,12 @@
+D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\obj\Release\TIAGroupCopyCLI.csproj.CoreCompileInputs.cache
+D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\bin\Release\TIAGroupCopyCLI.exe.config
+D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\bin\Release\TIAGroupCopyCLI.exe
+D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\bin\Release\TIAGroupCopyCLI.pdb
+D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\obj\Release\TIAGroupCopyCLI.exe
+D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\obj\Release\TIAGroupCopyCLI.pdb
+D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\bin\Release\TIAGroupCopyCLI.exe.manifest
+D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\bin\Release\TIAGroupCopyCLI.application
+D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\obj\Release\TIAGroupCopyCLI.exe.manifest
+D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\obj\Release\TIAGroupCopyCLI.application
+D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\bin\Release\SampleStart.bat
+D:\KnesMX\source\repos\TIAGroupCopyCLI\TIAGroupCopyCLI\obj\Release\TIAGroupCopyCLI.csprojAssemblyReference.cache
