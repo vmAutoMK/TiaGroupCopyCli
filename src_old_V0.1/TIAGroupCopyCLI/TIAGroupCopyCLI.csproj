@@ -61,6 +61,9 @@
   <PropertyGroup>
     <SignManifests>true</SignManifests>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>TIAGroupCopyCLI.Program</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Siemens.Engineering">
       <HintPath>C:\Program Files\Siemens\Automation\Portal V15_1\PublicAPI\V15.1\Siemens.Engineering.dll</HintPath>
