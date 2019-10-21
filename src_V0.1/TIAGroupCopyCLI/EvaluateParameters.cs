@@ -135,10 +135,9 @@ namespace TIAGroupCopyCLI.Para
             #endregion
 
             #region Agument FDestAddrOffset
-            //currentArgIdx++;
             if (aArgs.Count() > currentArgIdx)
             {
-                currentArgIdx = 10;
+                //currentArgIdx = 10;  //test exeception
                 try
                 {
                     IDeviceIoAddressOffset = UInt32.Parse(aArgs[currentArgIdx]);

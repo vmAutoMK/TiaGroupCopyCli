@@ -273,7 +273,7 @@ namespace TIAGroupCopyCLI.Plcs
             }
         }
 
-        public void SetAllIToConnections()
+        public void SetAllToConnections()
         {
             foreach (ConnectionProviderAndAttributes item in AllToConnections)
             {

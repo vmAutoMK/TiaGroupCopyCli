@@ -70,11 +70,12 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
 
 
-            var x = System.Reflection.Assembly.GetEntryAssembly().GetName().Version.ToString();
-            var y = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            Progress("==============");
+            //var x = System.Reflection.Assembly.GetEntryAssembly().GetName().Version.ToString();
+            //var y = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            Progress("================================================================");
 
             Parameters = new Parameters(args);
+           
             /*
             Parameters.ProjectPath = "D:\\KnesMX\\source\\TIA\\Groups\\Groups.ap15_1";
             Parameters.TemplateGroupName = "Group_";
@@ -90,14 +91,19 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
             if (!Parameters.ParameterOK)
             {
-                CancelGeneration("");
+                Console.ReadLine();
                 return;
             }
 
+
+
             RunTiaPortal();
 
+
+
+
             Console.WriteLine("");
-            Console.WriteLine("Hit enter to exit");
+            Console.WriteLine("Hit enter to exit.");
             Console.ReadLine();
         }
 
@@ -238,7 +244,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
                 drives.Restore();
                 drives.ChangePnDeviceNames(currentPrefix);
 
-                plcs.SetAllIToConnections();
+                plcs.SetAllToConnections();
 
 
                 plcs.DelecteOldSubnet();
@@ -281,7 +287,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             {
                 Console.WriteLine(e.Message);
             }
-            Console.ReadLine();
+            //Console.ReadLine();
             try
             {
                 tiaPortal.Dispose();

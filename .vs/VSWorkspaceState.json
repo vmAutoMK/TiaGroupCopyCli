@@ -1,8 +1,10 @@
 {
   "ExpandedNodes": [
     "",
-    "\\src"
+    "\\Bin_Releases",
+    "\\src",
+    "\\src_old_V0.1"
   ],
-  "SelectedNode": "\\TIA_samples",
+  "SelectedNode": "\\src_old_V0.1\\TIAGroupCopyCLI_V0.1.sln",
   "PreviewInSolutionExplorer": false
 }
