@@ -123,6 +123,7 @@ namespace TIAGroupCopyCLI.Plcs
         }
 
     }
+
     class ManagePlc : ManageDevice
     {
 
@@ -152,7 +153,7 @@ namespace TIAGroupCopyCLI.Plcs
         public AttributeAndDeviceItem CentralFSourceAddress_attribue;
         public AttributeAndDeviceItem LowerBoundForFDestinationAddresses_attribues;
         public AttributeAndDeviceItem UpperBoundForFDestinationAddresses_attribues;
-        public IList<AttributeAndDeviceItem> FDestinationAddress_attribues;
+        //public IList<AttributeAndDeviceItem> xFDestinationAddress_attribues;
         public Subnet originalSubnet;
         public IoSystem originalIoSystem;
         public IoSystem newIoSystem;
@@ -164,20 +165,20 @@ namespace TIAGroupCopyCLI.Plcs
             Save();
         }
 
-        /*
+
         public ManagePlc(IList<Device> aDevices) : base(aDevices)
         {
-
+            Save();
         }
-        */
-        
+
+        /*
         public ManagePlc(DeviceUserGroup aGroup)
         {
             IList<Device> devices = Service.GetPlcDevicesInGroup(aGroup);
             AllDevices = (List<Device>)devices;
             Save();
         }
-        
+        */
 
         public void ChangeIoSystemName(string aPrefix)
         {
@@ -193,23 +194,26 @@ namespace TIAGroupCopyCLI.Plcs
             }
         }
 
-        public void Save()
+        public new void Save()
         {
 
             Device currentDevice = AllDevices[0];
             CentralFSourceAddress_attribue = Service.Get1ValueAndDeviceItemWithAttribute(currentDevice.DeviceItems, "Failsafe_CentralFSourceAddress");
             LowerBoundForFDestinationAddresses_attribues = Service.Get1ValueAndDeviceItemWithAttribute(currentDevice.DeviceItems, "Failsafe_LowerBoundForFDestinationAddresses");
             UpperBoundForFDestinationAddresses_attribues = Service.Get1ValueAndDeviceItemWithAttribute(currentDevice.DeviceItems, "Failsafe_UpperBoundForFDestinationAddresses");
-            FDestinationAddress_attribues = Service.GetValueAndDeviceItemsWithAttribute(currentDevice.DeviceItems, "Failsafe_FDestinationAddress");
+            //xFDestinationAddress_attribues = Service.GetValueAndDeviceItemsWithAttribute(currentDevice.DeviceItems, "Failsafe_FDestinationAddress");
 
             originalSubnet = FirstPnNetworkInterfaces[0].Nodes[0].ConnectedSubnet;
             originalIoSystem = FirstPnNetworkInterfaces[0].IoConnectors[0].ConnectedToIoSystem;
 
+            //GetAll_I_DeviceParnerAdresses();
+
             plcSoftware = Service.GetPlcSoftware(currentDevice);
-            GetAllIToConnections();
+            GetAllToConnections();
+
         }
 
-        public void Restore()
+        public new  void  Restore()
         {
 
             CentralFSourceAddress_attribue.Restore();
@@ -219,19 +223,21 @@ namespace TIAGroupCopyCLI.Plcs
             ulong lower = (ulong)LowerBoundForFDestinationAddresses_attribues.Value;
             ulong upper = (ulong)UpperBoundForFDestinationAddresses_attribues.Value;
 
-            foreach (AttributeAndDeviceItem item in FDestinationAddress_attribues)  //.Where(i => true)
-            {
-                if (((ulong)item.Value >= lower) && ((ulong)item.Value <= upper))
-                {
-                    item.Restore();
-                }
-            }
+            base.Restore();
 
-            
+            //foreach (AttributeAndDeviceItem item in xFDestinationAddress_attribues)  //.Where(i => true)
+            //{
+            //    if (((ulong)item.Value >= lower) && ((ulong)item.Value <= upper))
+            //    {
+             //       item.Restore();
+            //    }
+           // }
 
+            RestorePnDeviceNumber();
+            SetAllIDeviceParnerAdresses();
         }
 
-        public void GetAllIDeviceParnerAdresses()
+        public void GetAll_I_DeviceParnerAdresses()
         {
             foreach (TransferArea currentTransferArea in FirstPnNetworkInterfaces[0].TransferAreas)
             {
@@ -255,7 +261,7 @@ namespace TIAGroupCopyCLI.Plcs
             }
         }
 
-        public void GetAllIToConnections()
+        public void GetAllToConnections()
         {
             foreach (TechnologicalInstanceDB currentTechnologicalInstanceDB in plcSoftware.TechnologicalObjectGroup.TechnologicalObjects)
             {
@@ -287,32 +293,37 @@ namespace TIAGroupCopyCLI.Plcs
             LowerBoundForFDestinationAddresses_attribues.Value = aTemplatePlc.LowerBoundForFDestinationAddresses_attribues.Value;
             UpperBoundForFDestinationAddresses_attribues.Value = aTemplatePlc.UpperBoundForFDestinationAddresses_attribues.Value;
 
-            for (int i = 0; i < FDestinationAddress_attribues.Count; i++)
+
+            for (int i = 0; i < aTemplatePlc.FDestinationAddress_attribues.Count; i++)
             {
                 FDestinationAddress_attribues[i].Value = aTemplatePlc.FDestinationAddress_attribues[i].Value;
             }
 
-            for (int i = 0; i < AllIDevicePartnerAddrsses.Count; i++)
+            //AllIDevicePartnerAddrsses = aTemplatePlc.AllIDevicePartnerAddrsses.CopyTo;
+            for (int i = 0; i < aTemplatePlc.AllIDevicePartnerAddrsses.Count; i++)
             {
                 AllIDevicePartnerAddrsses[i].PartnerStartAddress.Value = aTemplatePlc.AllIDevicePartnerAddrsses[i].PartnerStartAddress.Value;
             }
+
+            PnDeviceNumberOfFirstPnNetworkInterfaces = aTemplatePlc.PnDeviceNumberOfFirstPnNetworkInterfaces;
         }
-        public void AdjustFSettings(ulong FSourceOffset, ulong aFDestOffset)
+        public new  void  AdjustFSettings(ulong FSourceOffset, ulong aFDestOffset)
         {
-            ulong oldUower = (ulong)LowerBoundForFDestinationAddresses_attribues.Value;
-            ulong oldLpper = (ulong)UpperBoundForFDestinationAddresses_attribues.Value;
+            ulong oldLower = (ulong)LowerBoundForFDestinationAddresses_attribues.Value;
+            ulong oldUpper = (ulong)UpperBoundForFDestinationAddresses_attribues.Value;
 
             CentralFSourceAddress_attribue.AddToValue(FSourceOffset);
             LowerBoundForFDestinationAddresses_attribues.AddToValue(aFDestOffset);
             UpperBoundForFDestinationAddresses_attribues.AddToValue(aFDestOffset);
 
-            foreach (AttributeAndDeviceItem item in FDestinationAddress_attribues)  //.Where(i => true)
-            {
-                if (((ulong)item.Value >= oldUower) && ((ulong)item.Value <= oldLpper))
-                {
-                    item.AddToValue(aFDestOffset);
-                }
-            }
+            base.AdjustFDestinationAddress(aFDestOffset, oldLower, oldUpper);
+            //foreach (AttributeAndDeviceItem item in xFDestinationAddress_attribues)  //.Where(i => true)
+            //{
+            //   if (((ulong)item.Value >= oldUower) && ((ulong)item.Value <= oldLpper))
+            //    {
+            //        item.AddToValue(aFDestOffset);
+            //    }
+            //}
 
         }
 
@@ -339,14 +350,40 @@ namespace TIAGroupCopyCLI.Plcs
 
         public void ConnectToMasterIoSystem(IoSystem aIoSystem)
         {
-            FirstPnNetworkInterfaces[0].IoConnectors[0].ConnectToIoSystem(aIoSystem);
+            if (aIoSystem != null )
+            {
+                FirstPnNetworkInterfaces[0].IoConnectors[0].ConnectToIoSystem(aIoSystem);
+            }
         }
 
+
+        public void RestorePnDeviceNumber()
+        {
+            if ((FirstPnNetworkInterfaces[0].IoConnectors.Count > 0))
+            {
+                if ((PnDeviceNumberOfFirstPnNetworkInterfaces[0]?.Value ?? null) != null)
+                {
+                    FirstPnNetworkInterfaces[0].IoConnectors[0].SetAttribute(PnDeviceNumberOfFirstPnNetworkInterfaces[0].Name, PnDeviceNumberOfFirstPnNetworkInterfaces[0].Value);
+                }
+            }
+        }
+
+        public void AdjustPnDeviceNumberWithOffset(uint aOffset)
+        {
+            if ((FirstPnNetworkInterfaces[0].IoConnectors.Count > 0))
+            {
+                if ((PnDeviceNumberOfFirstPnNetworkInterfaces[0]?.Value ?? null) != null)
+                {
+                    PnDeviceNumberOfFirstPnNetworkInterfaces[0].AddToValue(aOffset);
+                }
+            }
+        }
         public void DelecteOldSubnet()
         {
             originalSubnet.Delete();
         }
 
     }
+
 }
 

@@ -48,13 +48,14 @@ namespace TIAGroupCopyCLI.Hmis
             Save();
         }
 
+        /*
         public ManageHmi(DeviceUserGroup aGroup)
         {
             IList<Device> devices = Service.GetHmiDevicesInGroup(aGroup);
             AllDevices = (List<Device>)devices;
             Save();
         }
-
+        */
         public void Save()
         {
             ;

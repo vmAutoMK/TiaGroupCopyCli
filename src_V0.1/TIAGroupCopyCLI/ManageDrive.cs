@@ -136,6 +136,7 @@ namespace TIAGroupCopyCLI.Drives
             Save();
         }
 
+        /*
         public ManageDrive(DeviceUserGroup aGroup) 
         {
             //AllDevices.AddRange(aDevices);
@@ -143,15 +144,16 @@ namespace TIAGroupCopyCLI.Drives
             AllDevices = (List<Device>)devices;
             Save();
         }
-
-        public void Save()
+        */
+        public new void Save()
         {
             SaveFDestAndIoAddresses();
         }
 
-        public void Restore()
+        public new void Restore()
         {
             RestoreFDestAndIoAddresses();
+            base.Restore();
         }
 
         public void SaveFDestAndIoAddresses()
@@ -180,13 +182,14 @@ namespace TIAGroupCopyCLI.Drives
             }
         }
 
-        public void AdjustFDestinationAddress(ulong aOffset, ulong aLower, ulong aUpper)
+        public new void AdjustFDestinationAddress(ulong aOffset, ulong aLower, ulong aUpper)
         {
             foreach (TelegramAndAttributes currentTelegram in AllTelegrams)
             {
                 if (currentTelegram.FDestinationAddr != null)
                 {
-                    if ( ( (uint)currentTelegram.FDestinationAddr.Value < aLower ) || ( (uint)currentTelegram.FDestinationAddr.Value > aUpper ) )
+
+                        if ( ( (uint)currentTelegram.FDestinationAddr.Value >= aLower ) && ( (uint)currentTelegram.FDestinationAddr.Value <= aUpper ) )
                     {
                         currentTelegram.FDestinationAddr.AddToValue(aOffset);
                     }

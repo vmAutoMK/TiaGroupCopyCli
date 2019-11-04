@@ -143,6 +143,7 @@ namespace TIAGroupCopyCLI.Io
             Save();
         }
 
+        /*
         public ManageIo(DeviceUserGroup aGroup)
         {
             //AllDevices.AddRange(aDevices);
@@ -150,6 +151,7 @@ namespace TIAGroupCopyCLI.Io
             AllDevices = (List<Device>)devices;
             Save();
         }
+        */
         #endregion
 
         #region Methodes
@@ -175,6 +177,7 @@ namespace TIAGroupCopyCLI.Io
                 currentAddress.RestoreValue();
             }
 
+            base.Restore();
             /*
             int i = 0;
             foreach (NetworkInterface currentNetworkInterface in FirstPnNetworkInterfaces)

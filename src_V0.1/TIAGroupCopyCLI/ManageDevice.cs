@@ -34,6 +34,66 @@ using TIAHelper.Services;
 namespace TIAGroupCopyCLI.Devices
 {
 
+    public class PortAndPartnerPort
+    {
+
+        public NetworkPort DevicePort;
+        public List<NetworkPort> PartnerPorts = new List<NetworkPort>() ;
+        public bool isConnected;
+
+
+        public PortAndPartnerPort(NetworkPort devicePort)
+        {
+
+            DevicePort = devicePort;
+            if (DevicePort != null)
+            {
+                foreach (NetworkPort partnerPort in DevicePort.ConnectedPorts)
+                {
+                    PartnerPorts.Add( partnerPort);
+                    isConnected = true;
+                }
+            }
+        }
+
+        public void Save()
+        {
+            if (DevicePort != null)
+            {
+                foreach (NetworkPort partnerPort in DevicePort.ConnectedPorts)
+                {
+                    PartnerPorts.Add(partnerPort);
+                    isConnected = true;
+                }
+            }
+        }
+
+        public void Restore()
+        {
+            if ( (DevicePort != null) && isConnected)
+            {
+                foreach (NetworkPort partnerPort in PartnerPorts)
+                {
+                    try
+                    {
+                        DevicePort.ConnectToPort(partnerPort);
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.Progress("Could not conect to partner port.");
+                        Program.Progress(ex.Message);
+
+                    }
+                    ;
+                }
+
+            }
+
+        }
+
+    }
+
+
     class ManageDevice
     {
 
@@ -64,7 +124,7 @@ namespace TIAGroupCopyCLI.Devices
                     _allDevices = new List<Device>();
                 }
                 _allDevices = value;
-                Get1PnInterfaces();
+                //Get1PnInterfaces();
             }
         }
 
@@ -87,6 +147,9 @@ namespace TIAGroupCopyCLI.Devices
                 _firstPnNetworkInterfaces = value;
             }
         }
+
+        public List<PortAndPartnerPort> NetworkPortsAndPartners = new List<PortAndPartnerPort>();
+
 
         public List<AttributeInfo> PnDeviceNumberOfFirstPnNetworkInterfaces
         {
@@ -111,24 +174,72 @@ namespace TIAGroupCopyCLI.Devices
         public List<AttributeInfo> PnDeviceNameOfFirstPnNetworkInterfaces = new List<AttributeInfo>();
         public List<AttributeInfo> PnDeviceNameAutoGenOfFirstPnNetworkInterfaces = new List<AttributeInfo>();
 
+        public List<AttributeAndDeviceItem> FDestinationAddress_attribues = new List<AttributeAndDeviceItem>();
+
         #region constructors
+        /*
         public ManageDevice()
         {
             //AllDevices = new List<Device>();
+
         }
+        */
         public ManageDevice(Device aDevice)
         {
             AllDevices.Add(aDevice);
             Get1PnInterfaces();
+            GetAllPortsAndPartners();
+            Save();
+
         }
         public ManageDevice(IList<Device> aDevices)
         {
             AllDevices.AddRange(aDevices);
             Get1PnInterfaces();
+            GetAllPortsAndPartners();
+            Save();
         }
 
 
         #endregion
+
+        public void Save()
+        {
+            foreach (Device currentDevice in AllDevices)
+            {
+                IList<AttributeAndDeviceItem> newAttributes = Service.GetValueAndDeviceItemsWithAttribute(currentDevice.DeviceItems, "Failsafe_FDestinationAddress");
+
+                if (newAttributes != null)
+                {
+                    FDestinationAddress_attribues.AddRange(newAttributes);
+                }
+
+            }
+        }
+
+        public virtual  void Restore()
+        {
+            foreach (AttributeAndDeviceItem item in FDestinationAddress_attribues)  //.Where(i => true)
+            {
+                //if (((ulong)item.Value >= aLower) && ((ulong)item.Value <= aUpper))
+                //{
+                    item.Restore();
+                //}
+            }
+        }
+
+        public virtual void AdjustFDestinationAddress(ulong aFDestOffset, ulong aLower, ulong aUpper)
+        {
+
+            foreach (AttributeAndDeviceItem item in FDestinationAddress_attribues)  //.Where(i => true)
+            {
+                if (((ulong)item.Value >= aLower) && ((ulong)item.Value <= aUpper))
+                {
+                    item.AddToValue(aFDestOffset);
+                }
+            }
+
+        }
 
         public void Get1PnInterfaces()
         {
@@ -194,6 +305,62 @@ namespace TIAGroupCopyCLI.Devices
             }
         }
 
+        public void GetAllPortsAndPartners()
+        {
+
+            foreach (Device currentDevice in _allDevices)
+            {
+                IList<DeviceItem> tempPnInterfacesDeviceItems = Service.GetDeviceItemsWithAttribute(currentDevice.DeviceItems, "InterfaceType", "Ethernet");
+                if (tempPnInterfacesDeviceItems != null)
+                {
+
+                    foreach (DeviceItem currentPnInterfacesDeviceItems in tempPnInterfacesDeviceItems)
+                    {
+                        foreach (DeviceItem currentSubDeviceItems in currentPnInterfacesDeviceItems.DeviceItems)
+                        {
+                            try
+                            {
+
+                                NetworkPort tempPort = currentSubDeviceItems.GetService<NetworkPort>();
+                                if (tempPort != null)
+                                {
+                                    PortAndPartnerPort newPortAndPartnerPort = new PortAndPartnerPort(tempPort);
+
+                                    NetworkPortsAndPartners.Add(newPortAndPartnerPort);
+                                }
+                            }
+                            catch
+                            {
+                            }
+                        }
+                    }
+
+                }
+
+            }
+        }
+
+        public void RestoreAllPartnerPorts()
+        {
+            foreach (PortAndPartnerPort currentPortandPArtners in NetworkPortsAndPartners)
+            {
+                if (currentPortandPArtners.isConnected)
+                {
+                    foreach(NetworkPort currentNetworkPort in currentPortandPArtners.PartnerPorts)
+                    {
+                        try
+                        {
+                            currentPortandPArtners.DevicePort.ConnectToPort(currentNetworkPort);
+                        }
+                        catch
+                        {
+
+                        }
+                    }
+                }
+            }
+        }
+
         public void ChangeNames(string aPrefix)
         {
 
@@ -247,7 +414,7 @@ namespace TIAGroupCopyCLI.Devices
             }
         }
 
-        public void SwitchIoSystem(Subnet aSubnet, IoSystem aIoSystem, ulong aIpOffset)
+        public void xSwitchIoSystem(Subnet aSubnet, IoSystem aIoSystem, ulong aIpOffset)
         {
 
             int i = 0;
@@ -307,12 +474,14 @@ namespace TIAGroupCopyCLI.Devices
                     networkInterface.Nodes[0].ConnectToSubnet(aSubnet);
                     if (aIoSystem != null)
                     {
-                        
-                        networkInterface.IoConnectors[0].ConnectToIoSystem(aIoSystem);
-                        if ((networkInterface.IoConnectors.Count > 0) && (PnDeviceNumberOfFirstPnNetworkInterfaces[i].Value != null))
+                        if ((networkInterface.IoConnectors.Count > 0) )
                         {
+                            networkInterface.IoConnectors[0].ConnectToIoSystem(aIoSystem);
                             //Service.SetAttribute(networkInterface.IoConnectors[0], PnDeviceNumberOfFirstPnNetworkInterfaces[i]);
-                            networkInterface.IoConnectors[0].SetAttribute(PnDeviceNumberOfFirstPnNetworkInterfaces[i].Name, PnDeviceNumberOfFirstPnNetworkInterfaces[i].Value);
+                            if ( (PnDeviceNumberOfFirstPnNetworkInterfaces[i]?.Value ?? null) != null)
+                            {
+                                networkInterface.IoConnectors[0].SetAttribute(PnDeviceNumberOfFirstPnNetworkInterfaces[i].Name, PnDeviceNumberOfFirstPnNetworkInterfaces[i].Value);
+                            }
                         }
                     }
                 }

@@ -130,6 +130,24 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             Progress(String.Format("Project {0} is open", project.Path.FullName));
             #endregion
 
+            #region test
+
+            /*
+            DeviceUserGroup testGroup = project.DeviceGroups.Find(Parameters.TemplateGroupName);
+            ManagePlc testPlcs = new ManagePlc(testGroup);
+
+
+            NetworkPort testPlcPort = testPlcs.AllDevices[0].DeviceItems[1].DeviceItems[6].DeviceItems[0].GetService<NetworkPort>();
+            NetworkPort patnerPort =  testPlcPort.ConnectedPorts[0];
+
+            AttributeValue thisname = Service.GetAttribute(patnerPort, "Name");
+
+            testPlcPort.DisconnectFromPort(patnerPort);
+            testPlcPort.ConnectToPort(patnerPort);
+            */
+
+            #endregion
+
             #region master copy
             Progress("Creating master copy.");
 
@@ -152,8 +170,9 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             #endregion
 
             #region get basic info from template group
-            ManagePlc templatePlcs = new ManagePlc(templateGroup);
-            templatePlcs.GetAllIDeviceParnerAdresses();
+            IList<Device> templatePlcDevices = Service.GetPlcDevicesInGroup(templateGroup);
+            ManagePlc templatePlcs = new ManagePlc(templatePlcDevices);
+            templatePlcs.GetAll_I_DeviceParnerAdresses();
 
             if (templatePlcs.AllDevices.Count != 1)
             {
@@ -205,10 +224,15 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
                 newGroup.Name = Parameters.NewGroupNamePrefix + groupCounter.ToString(indexformat); ;
                 Service.ChangeDeviceNames(newGroup, currentPrefix);
 
+                IList<Device> plcDevices = Service.GetPlcDevicesInGroup(newGroup);
+                ManagePlc plcs = new ManagePlc(plcDevices);
 
-                ManagePlc plcs = new ManagePlc(newGroup);
-                ManageHmi hmis = new ManageHmi(newGroup);
-                ManageDrive drives = new ManageDrive(newGroup);
+                IList<Device> hmiDevices = Service.GetHmiDevicesInGroup(newGroup);
+                ManageHmi hmis = new ManageHmi(hmiDevices);
+
+                IList<Device> driveDevices = Service.GetG120DevicesInGroup(newGroup);
+                ManageDrive drives = new ManageDrive(driveDevices);
+
                 IList<Device> allDevices = Service.GetAllDevicesInGroup(newGroup);
                 IList<Device> tempIoDevices = allDevices.Except(hmis.AllDevices).Except(drives.AllDevices).ToList();
                 tempIoDevices.Remove(plcs.AllDevices[0]);
@@ -218,17 +242,18 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
                 plcs.ChangeIpAddresses(groupCounter - 1);
                 plcs.CreateNewIoSystem(templatePlcs.originalSubnet, currentPrefix);
                 plcs.ConnectToMasterIoSystem(templatePlcs.originalIoSystem);
-                plcs.GetAllIDeviceParnerAdresses();
+                plcs.GetAll_I_DeviceParnerAdresses();
                 plcs.CopyFromTemplate(templatePlcs);
                 plcs.AdjustFSettings(Parameters.FBaseAddrOffset * (groupCounter - 1), Parameters.FDestAddrOffset * (groupCounter - 1));
+                plcs.AdjustPnDeviceNumberWithOffset((groupCounter - 1));
                 plcs.AdjustPartnerAddresses(Parameters.IDeviceIoAddressOffset * (groupCounter - 1));
                 plcs.Restore();
                 plcs.ChangePnDeviceNames(currentPrefix);
-                plcs.SetAllIDeviceParnerAdresses();
+                //plcs.SetAllIDeviceParnerAdresses();
 
                 ioDevices.ChangeIpAddresses(groupCounter - 1);
                 ioDevices.SwitchIoSystem(templatePlcs.originalSubnet, plcs.newIoSystem);
-                //ioDevices.AdjustFDestinationAddress(Parameters.FDestAddrOffset, (ulong)templatePlcs.LowerBoundForFDestinationAddresses_attribues.Value, (ulong)templatePlcs.UpperBoundForFDestinationAddresses_attribues.Value);
+                ioDevices.AdjustFDestinationAddress(Parameters.FDestAddrOffset * (groupCounter - 1), (ulong)templatePlcs.LowerBoundForFDestinationAddresses_attribues.Value, (ulong)templatePlcs.UpperBoundForFDestinationAddresses_attribues.Value);
                 ioDevices.Restore();
                 ioDevices.ChangePnDeviceNames(currentPrefix);
 
@@ -246,6 +271,9 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
                 plcs.SetAllToConnections();
 
+
+                plcs.RestoreAllPartnerPorts();
+                ioDevices.RestoreAllPartnerPorts();
 
                 plcs.DelecteOldSubnet();
                 //deleteNetworkSubnet.Delete();

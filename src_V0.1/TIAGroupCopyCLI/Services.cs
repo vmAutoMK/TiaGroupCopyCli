@@ -146,7 +146,19 @@ namespace TIAHelper.Services
         public Address Address;
         public void RestoreValue()
         {
-            Address.SetAttribute(Name, Value);
+            try
+            {
+                Address.SetAttribute(Name, Value);
+            }
+            catch(Siemens.Engineering.EngineeringNotSupportedException)
+            {
+
+            }
+            catch (Exception e)
+            {
+
+            }
+
         }
 
     }
@@ -804,7 +816,7 @@ namespace TIAHelper.Services
         }
 
 
-        public static IList<NetworkInterface> GetPnInterfaces(Device aDevice)
+        public static IList<NetworkInterface> GetAllPnInterfaces(Device aDevice)
         {
             
             List<NetworkInterface> returnPnInterfaces = new List<NetworkInterface>();
@@ -845,7 +857,58 @@ namespace TIAHelper.Services
         }
 
 
+        public static IList<NetworkPort> GetAllPorts(Device aDevice)
+        {
 
- 
+            List<NetworkPort> returnPorts = new List<NetworkPort>();
+            //IList<DeviceItem> addPnInterfaceDeviceItems;
+
+            if (aDevice != null)
+            {
+
+                foreach (DeviceItem currentDeviceItem in aDevice.DeviceItems)
+                {
+                    foreach (DeviceItem currentSub1DeviceItems in currentDeviceItem.DeviceItems)
+                    {
+                        try
+                        {
+                            if (currentSub1DeviceItems.GetAttribute("InterfaceType").ToString() == "Ethernet")
+                            {
+                                foreach (DeviceItem currentSub2DeviceItems in currentDeviceItem.DeviceItems)
+                                {
+                                    try
+                                    {
+
+                                        NetworkPort tempPort = currentSub2DeviceItems.GetService<NetworkPort>();
+                                        if (tempPort != null)
+                                        {
+                                            returnPorts.Add(tempPort);
+                                        }
+                                    }
+                                    catch
+                                    {
+                                    }
+                                }
+                            }
+
+                        }
+                        catch (Exception e)
+                        {
+                            //Für jedes DeviceItem, das nicht über das Attribut 'InterfaceType' verfügt, wird eine Exception geworfen.
+                            //Für diese Anwendung ist die Auswertung der Exception nicht relevant.
+
+                            //Eine schönere Lösung wäre es mit einer foreach-Schleife durch die AttributeInfos des DeviceItems zu gehen
+                            //und zu überprüfen ob ein Attribut mit Namen "InterfaceType" enthalten ist.
+                        }
+
+                    }
+                }
+
+            }
+
+            return returnPorts;
+        }
+
+
     }
 }
