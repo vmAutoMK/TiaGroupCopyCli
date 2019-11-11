@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
 
+using TIAGroupCopyCLI;
+
 namespace TiaOpennessHelper.Utils
 {
 
@@ -28,6 +30,11 @@ namespace TiaOpennessHelper.Utils
             {
                 return Assembly.LoadFrom(fullPath);
             }
+            else if (name == "Siemens.Engineering.dll")
+            {
+                Program.Progress("The following DLL does not exits: " + fullPath);
+            }
+
             return null;
         }
 

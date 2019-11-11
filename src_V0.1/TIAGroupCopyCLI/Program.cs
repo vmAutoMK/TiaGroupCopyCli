@@ -32,11 +32,7 @@ using Siemens.Engineering.Library.MasterCopies;
 
 using TiaOpennessHelper.Utils;
 using TIAHelper.Services;
-using TIAGroupCopyCLI.Devices;
-using TIAGroupCopyCLI.Plcs;
-using TIAGroupCopyCLI.Drives;
-using TIAGroupCopyCLI.Hmis;
-using TIAGroupCopyCLI.Io;
+using TIAGroupCopyCLI.Models;
 using TIAGroupCopyCLI.Para;
 
 
@@ -62,31 +58,18 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             //AppDomain.CurrentDomain.AssemblyResolve += Resolver.OnResolve;
             Heandlers.AddAppExceptionHaenlder();
 
-            string assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+            //string assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             string fileVersion = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
-            string productVersion = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
+            //string productVersion = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
             Progress("TIA Group copy v" + fileVersion);
             Progress("This beta version is a customized solution for now");
 
 
-
-            //var x = System.Reflection.Assembly.GetEntryAssembly().GetName().Version.ToString();
-            //var y = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
             Progress("================================================================");
 
             Parameters = new Parameters(args);
-           
-            /*
-            Parameters.ProjectPath = "D:\\KnesMX\\source\\TIA\\Groups\\Groups.ap15_1";
-            Parameters.TemplateGroupName = "Group_";
-            Parameters.Prefix = "sk";
-            Parameters.NumOfGroups = 3;
-            Parameters.FBaseAddrOffset = 1;
-            Parameters.FDestAddrOffset = 100;
-            Parameters.IDeviceDeviceNumberOffset = 1;
-            Parameters.IDeviceIoAddressOffset = 100;
-            */
 
+ 
 
 
             if (!Parameters.ParameterOK)
@@ -107,8 +90,29 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             Console.ReadLine();
         }
 
+
+        //=================================================================================================
         private static void RunTiaPortal()
         {
+            #region test: hardcode path
+            /*
+            Console.WriteLine("!!!with hardcoded project path for testing!!!");
+
+            Parameters.ProjectPath = @"D:\Source\TiaGroupCopyCli\TIA_samples\EMS\EMS.ap15_1";
+             Parameters.TemplateGroupName = "EMS_Controller";
+             Parameters.NewGroupNamePrefix = "EMS_Controller ";
+             Parameters.Prefix = "ems";
+            
+           Parameters.ProjectPath = "D:\\KnesMX\\source\\TIA\\Groups\\Groups.ap15_1";
+           Parameters.TemplateGroupName = "Group_";
+           Parameters.Prefix = "sk";
+           Parameters.NumOfGroups = 3;
+           Parameters.FBaseAddrOffset = 1;
+           Parameters.FDestAddrOffset = 100;
+           Parameters.IDeviceDeviceNumberOffset = 1;
+           Parameters.IDeviceIoAddressOffset = 100;
+           */
+            #endregion
 
             #region tia and project
             Progress("Check running TIA Portal");
@@ -130,9 +134,10 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             Progress(String.Format("Project {0} is open", project.Path.FullName));
             #endregion
 
-            #region test
+            #region test models
 
             /*
+            Console.WriteLine("!!! TESTING !!!");
             DeviceUserGroup testGroup = project.DeviceGroups.Find(Parameters.TemplateGroupName);
             ManagePlc testPlcs = new ManagePlc(testGroup);
 
@@ -159,20 +164,32 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             }
 
             //=======copy to master copy========
-            MasterCopyComposition masterCopies = project.ProjectLibrary.MasterCopyFolder.MasterCopies;
-            MasterCopy templateCopy = masterCopies.Create(templateGroup);
+            //MasterCopyComposition masterCopies = project.ProjectLibrary.MasterCopyFolder.MasterCopies;
+            MasterCopy templateCopy = null;
+            try
+            {
+
+                templateCopy = project.ProjectLibrary.MasterCopyFolder.MasterCopies.Create(templateGroup);
+            }
+            catch (Exception ex)
+            {
+                CancelGeneration("Could not create master copy.",ex);
+                return;
+            }
+
             if (templateCopy == null)
             {
                 CancelGeneration("Could not create master copy.");
                 return;
             }
-            MasterCopy deleteCopy = project.ProjectLibrary.MasterCopyFolder.MasterCopies.Find(templateCopy.Name);
+
+            MasterCopy deleteMasterCopy = project.ProjectLibrary.MasterCopyFolder.MasterCopies.Find(templateCopy.Name);
             #endregion
 
             #region get basic info from template group
             IList<Device> templatePlcDevices = Service.GetPlcDevicesInGroup(templateGroup);
             ManagePlc templatePlcs = new ManagePlc(templatePlcDevices);
-            templatePlcs.GetAll_I_DeviceParnerAdresses();
+            templatePlcs.GetAll_iDeviceParnerIoAdresses();
 
             if (templatePlcs.AllDevices.Count != 1)
             {
@@ -199,7 +216,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
             #region copy group loop
             DeviceUserGroupComposition userGroups = project.DeviceGroups;
-            //groupCounter++;
+ 
             while (++groupCounter <= Parameters.NumOfGroups)
             {
                 #region copy group
@@ -214,12 +231,13 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
                 }
                 catch(Exception e)
                 {
-                    CancelGeneration("Could not create new Group");
+                    CancelGeneration("Could not create new Group", e);
                     return;
                 }
 
                 #endregion
 
+                #region read in devices
                 //newGroup.Name = newGroup.Name + groupCounter.ToString(indexformat); ;
                 newGroup.Name = Parameters.NewGroupNamePrefix + groupCounter.ToString(indexformat); ;
                 Service.ChangeDeviceNames(newGroup, currentPrefix);
@@ -238,15 +256,17 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
                 tempIoDevices.Remove(plcs.AllDevices[0]);
                 ManageIo ioDevices = new ManageIo(tempIoDevices);
 
+                #endregion
 
+                #region change settigns 
                 plcs.ChangeIpAddresses(groupCounter - 1);
                 plcs.CreateNewIoSystem(templatePlcs.originalSubnet, currentPrefix);
                 plcs.ConnectToMasterIoSystem(templatePlcs.originalIoSystem);
-                plcs.GetAll_I_DeviceParnerAdresses();
+                plcs.GetAll_iDeviceParnerIoAdresses();
                 plcs.CopyFromTemplate(templatePlcs);
                 plcs.AdjustFSettings(Parameters.FBaseAddrOffset * (groupCounter - 1), Parameters.FDestAddrOffset * (groupCounter - 1));
                 plcs.AdjustPnDeviceNumberWithOffset((groupCounter - 1));
-                plcs.AdjustPartnerAddresses(Parameters.IDeviceIoAddressOffset * (groupCounter - 1));
+                plcs.AdjustPartnerIoAddresses(Parameters.IDeviceIoAddressOffset * (groupCounter - 1));
                 plcs.Restore();
                 plcs.ChangePnDeviceNames(currentPrefix);
                 //plcs.SetAllIDeviceParnerAdresses();
@@ -273,7 +293,11 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
 
                 plcs.RestoreAllPartnerPorts();
+                hmis.RestoreAllPartnerPorts();
+                drives.RestoreAllPartnerPorts();
                 ioDevices.RestoreAllPartnerPorts();
+
+                #endregion
 
                 plcs.DelecteOldSubnet();
                 //deleteNetworkSubnet.Delete();
@@ -282,8 +306,17 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
             #endregion
 
+            try
+            {
 
-            deleteCopy.Delete();
+                deleteMasterCopy.Delete();
+            }
+            catch(Exception ex)
+            {
+                Program.FaultMessage("Could not delete Mastercopy.", ex);
+            }
+
+            Progress("");
 
             Console.WriteLine("Copy complete.");
             if (tiaStartedWithoutInterface == true)
@@ -294,22 +327,28 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             }
             else
             {
-                Console.WriteLine("Please save project with TIAP");
+                Console.WriteLine("Please save project within TIAP.");
             }
 
-            
-            tiaPortal.Dispose();
+            try
+            {
+                tiaPortal.Dispose();
+            }
+            catch
+            {
 
+            }
 
 
         }
 
-
+        #region messaging
         public static void CancelGeneration(string message, Exception e = null)
         {
             //MessageBox.Show(message);
             //GenerateText = notInProgressText;
             //ProgressMessage = "";
+            Console.WriteLine("");
             Console.WriteLine(message);
             if (e != null)
             {
@@ -324,6 +363,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             {
 
             }
+            Console.WriteLine("");
         }
 
         public static void Progress(string message)
@@ -332,8 +372,25 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             //GenerateText = notInProgressText;
             //ProgressMessage = "";
             Console.WriteLine(message);
-
+        }
+        public static void FaultMessage(string message, Exception ex = null, string functionName = "")
+        {
+            //MessageBox.Show(message);
+            //GenerateText = notInProgressText;
+            //ProgressMessage = "";
+            Console.WriteLine("");
+            Console.WriteLine(message);
+            if (functionName!="")
+            {
+                Console.WriteLine("Exception in " + functionName + " : ");
+            }
+            if (ex != null)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            Console.WriteLine("");
         }
 
+        #endregion
     }
 }

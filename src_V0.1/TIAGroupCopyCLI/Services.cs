@@ -150,13 +150,13 @@ namespace TIAHelper.Services
             {
                 Address.SetAttribute(Name, Value);
             }
-            catch(Siemens.Engineering.EngineeringNotSupportedException)
+            catch(EngineeringNotSupportedException )
             {
 
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-
+                Program.FaultMessage("Could not set Attribute. ", ex, "AttributeAndAddress.Address.SetAttribute");
             }
 
         }
@@ -263,8 +263,13 @@ namespace TIAHelper.Services
                     return newItem;
 
                 }
-                catch (Exception e)
+                catch (EngineeringNotSupportedException)
                 {
+
+                }
+                catch (Exception ex)
+                {
+                    Program.FaultMessage("Could not get Attribute", ex, "AttributeValue.GetAttribute");
                 }
             }
 
@@ -288,8 +293,13 @@ namespace TIAHelper.Services
                             returnItems.Add(newItem);
                         }
                     }
-                    catch (Exception e)
+                    catch (EngineeringNotSupportedException )
                     {
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.FaultMessage("Could not get Attribute", ex, "AttributeValue.GetAttributes");
                     }
                 }
             }
@@ -310,8 +320,13 @@ namespace TIAHelper.Services
                     };
                     return returnObject;
                 }
-                catch (Exception e)
+                catch (EngineeringNotSupportedException )
                 {
+
+                }
+                catch (Exception ex)
+                {
+                    Program.FaultMessage("Could not get Attribute", ex, "AttributeValue.GetAttributeInfo");
                 }
             }
             return null;
@@ -334,8 +349,13 @@ namespace TIAHelper.Services
                             returnItems.Add(newItem);
                         }
                     }
-                    catch (Exception e)
+                    catch (EngineeringNotSupportedException )
                     {
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.FaultMessage("Could not get Attribute", ex, "AttributeValue.GetAttributesInfo");
                     }
                 }
             }
@@ -351,11 +371,11 @@ namespace TIAHelper.Services
                     aIEngineeringObject.SetAttribute(aAttributeName, aAttributeValue.Value);
                     return true;
                 }
-                catch
+                catch (Exception ex)
                 {
-                    
+                    Program.FaultMessage("Could not set Attribute", ex, "AttributeValue.SetAttribute");
                 }
-    
+
             }
             return false;
         }
@@ -369,9 +389,9 @@ namespace TIAHelper.Services
                     aIEngineeringObject.SetAttribute(aAttributeInfo.Name, aAttributeInfo.Value);
                     return true;
                 }
-                catch
+                catch (Exception ex)
                 {
-
+                    Program.FaultMessage("Could not set Attribute", ex, "AttributeValue.SetAttribute");
                 }
 
             }
@@ -397,8 +417,6 @@ namespace TIAHelper.Services
 
         public static DeviceItem GetCpu1Interface1DeviceItem(DeviceUserGroup aDeviceUserGroup)
         {
-
-
             if (aDeviceUserGroup != null)
             {
                 IEnumerable<DeviceItem> deviceItemsPLC = null;
@@ -428,8 +446,13 @@ namespace TIAHelper.Services
                             {
                                 attributeList = devItem.GetAttributes(new string[] { "InterfaceType" });
                             }
-                            catch (Exception e)
+                            catch (EngineeringNotSupportedException )
                             {
+
+                            }
+                            catch (Exception ex)
+                            {
+                                Program.FaultMessage("Could not get Attribute", ex, "Service.GetCpu1Interface1DeviceItem");
                             }
 
                             if (attributeList != null)
@@ -522,8 +545,7 @@ namespace TIAHelper.Services
                         SoftwareContainer container =   deviceItemToGetService.GetService<SoftwareContainer>();
                         if (container != null)
                         {
-                            HmiTarget hmi = container.Software as HmiTarget;
-                            if (hmi != null)
+                            if (container.Software is HmiTarget hmi)
                             {
                                 returnHmiDevices.Add(device);
                                 break;
@@ -558,8 +580,7 @@ namespace TIAHelper.Services
                         DriveObjectContainer container = deviceItemToGetService.GetService<DriveObjectContainer>();//DriveObject
                         if (container != null)
                         {
-                            DriveObject G120 = container.DriveObjects[0] as DriveObject;
-                            if (G120 != null)
+                            if (container.DriveObjects[0] is DriveObject G120)
                             {
                                 returnG120Devices.Add(device);
                                 break;
@@ -597,13 +618,13 @@ namespace TIAHelper.Services
                             returnDeviceItems.Add(currentDeviceItem);
                         }
                     }
-                    catch (Exception e)
+                    catch (EngineeringNotSupportedException )
                     {
-                        //Für jedes DeviceItem, das nicht über das Attribut 'InterfaceType' verfügt, wird eine Exception geworfen.
-                        //Für diese Anwendung ist die Auswertung der Exception nicht relevant.
 
-                        //Eine schönere Lösung wäre es mit einer foreach-Schleife durch die AttributeInfos des DeviceItems zu gehen
-                        //und zu überprüfen ob ein Attribut mit Namen "InterfaceType" enthalten ist.
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.FaultMessage("Could not get Attribute", ex, "Service.GetDeviceItemsWithAttribute");
                     }
 
                     //check sub DeviceItems - recursive
@@ -634,13 +655,13 @@ namespace TIAHelper.Services
                         newItem.DeviceItem = currentDeviceItem;
                         returnDeviceItems.Add(newItem);
                     }
-                    catch (Exception e)
+                    catch (EngineeringNotSupportedException )
                     {
-                        //Für jedes DeviceItem, das nicht über das Attribut 'InterfaceType' verfügt, wird eine Exception geworfen.
-                        //Für diese Anwendung ist die Auswertung der Exception nicht relevant.
 
-                        //Eine schönere Lösung wäre es mit einer foreach-Schleife durch die AttributeInfos des DeviceItems zu gehen
-                        //und zu überprüfen ob ein Attribut mit Namen "InterfaceType" enthalten ist.
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.FaultMessage("Could not get Attribute", ex, "Service.GetValueAndDeviceItemsWithAttribute");
                     }
 
                     //check sub DeviceItems - recursive
@@ -669,13 +690,13 @@ namespace TIAHelper.Services
                         returnDeviceItem.DeviceItem = currentDeviceItem;
                         return returnDeviceItem;
                     }
-                    catch (Exception e)
+                    catch (EngineeringNotSupportedException )
                     {
-                        //Für jedes DeviceItem, das nicht über das Attribut 'InterfaceType' verfügt, wird eine Exception geworfen.
-                        //Für diese Anwendung ist die Auswertung der Exception nicht relevant.
 
-                        //Eine schönere Lösung wäre es mit einer foreach-Schleife durch die AttributeInfos des DeviceItems zu gehen
-                        //und zu überprüfen ob ein Attribut mit Namen "InterfaceType" enthalten ist.
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.FaultMessage("Could not get Attribute", ex, "Service.Get1ValueAndDeviceItemWithAttribute");
                     }
 
                     //check sub DeviceItems - recursive
@@ -713,13 +734,13 @@ namespace TIAHelper.Services
                             newItem.Address = currentAddress;
                             returnDeviceItems.Add(newItem);
                         }
-                        catch (Exception e)
+                        catch (EngineeringNotSupportedException )
                         {
-                            //Für jedes DeviceItem, das nicht über das Attribut 'InterfaceType' verfügt, wird eine Exception geworfen.
-                            //Für diese Anwendung ist die Auswertung der Exception nicht relevant.
 
-                            //Eine schönere Lösung wäre es mit einer foreach-Schleife durch die AttributeInfos des DeviceItems zu gehen
-                            //und zu überprüfen ob ein Attribut mit Namen "InterfaceType" enthalten ist.
+                        }
+                        catch (Exception ex)
+                        {
+                            Program.FaultMessage("Could not get Attribute", ex, "Service.GetValueAndAddressWithAttribute");
                         }
                     }
                 }
@@ -745,13 +766,13 @@ namespace TIAHelper.Services
                         newItem.Telegram = currentTelegram;
                         returnDeviceItems.Add(newItem);
                     }
-                    catch (Exception e)
+                    catch (EngineeringNotSupportedException)
                     {
-                        //Für jedes DeviceItem, das nicht über das Attribut 'InterfaceType' verfügt, wird eine Exception geworfen.
-                        //Für diese Anwendung ist die Auswertung der Exception nicht relevant.
 
-                        //Eine schönere Lösung wäre es mit einer foreach-Schleife durch die AttributeInfos des DeviceItems zu gehen
-                        //und zu überprüfen ob ein Attribut mit Namen "InterfaceType" enthalten ist.
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.FaultMessage("Could not get Attribute", ex, "Service.GetValueAndTelegramWithAttribute");
                     }
 
                 }
@@ -801,13 +822,13 @@ namespace TIAHelper.Services
                             returnDeviceItems.Add(newItem);
                         }
                     }
-                    catch (Exception e)
+                    catch (EngineeringNotSupportedException )
                     {
-                        //Für jedes DeviceItem, das nicht über das Attribut 'InterfaceType' verfügt, wird eine Exception geworfen.
-                        //Für diese Anwendung ist die Auswertung der Exception nicht relevant.
 
-                        //Eine schönere Lösung wäre es mit einer foreach-Schleife durch die AttributeInfos des DeviceItems zu gehen
-                        //und zu überprüfen ob ein Attribut mit Namen "InterfaceType" enthalten ist.
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.FaultMessage("Could not get Attribute", ex, "Service.GetValueAndAddressWithAttribute");
                     }
 
                 }
@@ -839,13 +860,13 @@ namespace TIAHelper.Services
                             }
 
                         }
-                        catch (Exception e)
+                        catch (EngineeringNotSupportedException )
                         {
-                            //Für jedes DeviceItem, das nicht über das Attribut 'InterfaceType' verfügt, wird eine Exception geworfen.
-                            //Für diese Anwendung ist die Auswertung der Exception nicht relevant.
 
-                            //Eine schönere Lösung wäre es mit einer foreach-Schleife durch die AttributeInfos des DeviceItems zu gehen
-                            //und zu überprüfen ob ein Attribut mit Namen "InterfaceType" enthalten ist.
+                        }
+                        catch (Exception ex)
+                        {
+                            Program.FaultMessage("Could not get Attribute", ex, "Service.GetAllPnInterfaces");
                         }
 
                     }
@@ -892,13 +913,13 @@ namespace TIAHelper.Services
                             }
 
                         }
-                        catch (Exception e)
+                        catch (EngineeringNotSupportedException )
                         {
-                            //Für jedes DeviceItem, das nicht über das Attribut 'InterfaceType' verfügt, wird eine Exception geworfen.
-                            //Für diese Anwendung ist die Auswertung der Exception nicht relevant.
 
-                            //Eine schönere Lösung wäre es mit einer foreach-Schleife durch die AttributeInfos des DeviceItems zu gehen
-                            //und zu überprüfen ob ein Attribut mit Namen "InterfaceType" enthalten ist.
+                        }
+                        catch (Exception ex)
+                        {
+                            Program.FaultMessage("Could not get Attribute", ex, "Service.GetAllPorts");
                         }
 
                     }

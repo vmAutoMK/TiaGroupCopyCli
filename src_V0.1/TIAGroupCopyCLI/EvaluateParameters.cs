@@ -77,8 +77,7 @@ namespace TIAGroupCopyCLI.Para
             }
             catch (Exception e)
             {
-                Program.Progress("Parameters NumOfGroups = " + aArgs[currentArgIdx] + " could not be converted to a number. ");
-                Program.Progress(e.Message);
+                Program.FaultMessage("Parameters NumOfGroups = " + aArgs[currentArgIdx] + " could not be converted to a number. ", e);
                 Description();
                 return;
             }
@@ -86,12 +85,12 @@ namespace TIAGroupCopyCLI.Para
             
             if (NumOfGroups < 1 )
             {
-                Program.Progress("Parameters NumOfGroups = " + NumOfGroups + " too small ");
+                Program.FaultMessage("Parameters NumOfGroups = " + NumOfGroups + " too small .");
                 Description();
                 return;
             }else if (NumOfGroups > 1000)
             {
-                Program.Progress("Parameters NumOfGroups = " + NumOfGroups + " too larg (max 999 ");
+                Program.FaultMessage("Parameters NumOfGroups = " + NumOfGroups + " too larg (max 999 ");
                 Description();
                 return;
             }
@@ -108,8 +107,7 @@ namespace TIAGroupCopyCLI.Para
                 }
                 catch (Exception e)
                 {
-                    Program.Progress("Parameters FBaseAddrOffset = " + aArgs[currentArgIdx] + " could not be converted to a number. ");
-                    Program.Progress(e.Message);
+                    Program.FaultMessage("Parameters FBaseAddrOffset = " + aArgs[currentArgIdx] + " could not be converted to a number. ",e );
                     Description();
                     return;
                 }
@@ -126,8 +124,7 @@ namespace TIAGroupCopyCLI.Para
                 }
                 catch (Exception e)
                 {
-                    Program.Progress("Parameters FDestAddrOffset = " + aArgs[currentArgIdx] + " could not be converted to a number. ");
-                    Program.Progress(e.Message);
+                    Program.FaultMessage("Parameters FDestAddrOffset = " + aArgs[currentArgIdx] + " could not be converted to a number. ",e);
                     Description();
                     return;
                 }
@@ -144,8 +141,7 @@ namespace TIAGroupCopyCLI.Para
                 }
                 catch (Exception e)
                 {
-                    Program.Progress("Parameters FDestAddrOffset = " + aArgs[currentArgIdx] + " could not be converted to a number. ");
-                    Program.Progress(e.Message);
+                    Program.FaultMessage("Parameters FDestAddrOffset = " + aArgs[currentArgIdx] + " could not be converted to a number. ",e);
                     Description();
                     return;
                 }
