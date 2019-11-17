@@ -249,13 +249,9 @@ namespace TIAGroupCopyCLI.Models
             {
                 foreach(NetworkPort currentPort in currentInterface.Ports)
                 {
-                    //try
-                    {
-                        NetworkPortsAndPartners.Add(new PortAndPartnerPort(currentPort));
-                    }
-                    //catch
-                    {
-                    }
+
+                    NetworkPortsAndPartners.Add(new PortAndPartnerPort(currentPort));
+
                 }
             }
         }

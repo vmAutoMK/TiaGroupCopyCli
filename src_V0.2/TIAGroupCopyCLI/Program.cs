@@ -44,7 +44,8 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 {
     class Program
     {
-
+        const string TIAP_VERSION_USED_FOR_TESTING = "15.1";
+        const string OPENESS_VERSION_USED_FOR_TESTING = "15.1.0.0";
 
         static Parameters Parameters;
 
@@ -53,10 +54,8 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
         static void Main(string[] args)
         {
-            MyResolverClass.AddAssemblyResolver();
-            //AppDomain.CurrentDomain.AssemblyResolve += MyResolverClass.MyResolver;
-            //AppDomain.CurrentDomain.AssemblyResolve += Resolver.OnResolve;
             Heandlers.AddAppExceptionHaenlder();
+
 
             //string assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             string fileVersion = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
@@ -68,17 +67,18 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             Progress("================================================================");
 
             Parameters = new Parameters(args);
-
- 
-
-
             if (!Parameters.ParameterOK)
             {
                 Console.ReadLine();
                 return;
             }
 
-
+            if (!Heandlers.SelectAssmebly(Parameters.ProjectVersion, TIAP_VERSION_USED_FOR_TESTING, OPENESS_VERSION_USED_FOR_TESTING))
+            {
+                Console.ReadLine();
+                return;
+            }
+            Heandlers.AddAssemblyResolver();
 
             RunTiaPortal();
 

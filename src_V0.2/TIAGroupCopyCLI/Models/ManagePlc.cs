@@ -227,6 +227,17 @@ namespace TIAGroupCopyCLI.Models
 
         public void GetAll_iDeviceParnerIoAdresses()
         {
+            try
+            {
+                GetAll_iDeviceParnerIoAdresses_Internal(); //this is not possible in V15.0
+            }
+            catch (MissingMethodException)
+            {
+            }
+        }
+
+        private void GetAll_iDeviceParnerIoAdresses_Internal()
+        {
             foreach (TransferArea currentTransferArea in FirstPnNetworkInterfaces[0].TransferAreas)
             {
 
@@ -277,21 +288,21 @@ namespace TIAGroupCopyCLI.Models
 
         public void CopyFromTemplate(ManagePlc aTemplatePlc)
         {
-            CentralFSourceAddress_attribue.Value = aTemplatePlc.CentralFSourceAddress_attribue.Value;
-            LowerBoundForFDestinationAddresses_attribues.Value = aTemplatePlc.LowerBoundForFDestinationAddresses_attribues.Value;
-            UpperBoundForFDestinationAddresses_attribues.Value = aTemplatePlc.UpperBoundForFDestinationAddresses_attribues.Value;
+            CentralFSourceAddress_attribue.Value = aTemplatePlc.CentralFSourceAddress_attribue?.Value;
+            LowerBoundForFDestinationAddresses_attribues.Value = aTemplatePlc.LowerBoundForFDestinationAddresses_attribues?.Value;
+            UpperBoundForFDestinationAddresses_attribues.Value = aTemplatePlc.UpperBoundForFDestinationAddresses_attribues?.Value;
 
 
             for (int i = 0; i < aTemplatePlc.FDestinationAddress_attribues.Count; i++)
             {
-                FDestinationAddress_attribues[i].Value = aTemplatePlc.FDestinationAddress_attribues[i].Value;
+                FDestinationAddress_attribues[i].Value = aTemplatePlc.FDestinationAddress_attribues[i]?.Value;
             }
 
             //AllIDevicePartnerAddrsses = aTemplatePlc.AllIDevicePartnerAddrsses.CopyTo;
             for (int i = 0; i < aTemplatePlc.AllIDevicePartnerIoAddrsses.Count; i++)
             {
 
-                AllIDevicePartnerIoAddrsses[i].PartnerStartAddress.Value = aTemplatePlc.AllIDevicePartnerIoAddrsses[i].PartnerStartAddress.Value;
+                AllIDevicePartnerIoAddrsses[i].PartnerStartAddress.Value = aTemplatePlc.AllIDevicePartnerIoAddrsses[i].PartnerStartAddress?.Value;
             }
 
             for (int i = 0; i < aTemplatePlc.PnDeviceNumberOfFirstPnNetworkInterfaces.Count; i++)
@@ -309,7 +320,7 @@ namespace TIAGroupCopyCLI.Models
                     };
                 }
 
-                PnDeviceNumberOfFirstPnNetworkInterfaces[i].Value = aTemplatePlc.PnDeviceNumberOfFirstPnNetworkInterfaces[i].Value;
+                PnDeviceNumberOfFirstPnNetworkInterfaces[i].Value = aTemplatePlc.PnDeviceNumberOfFirstPnNetworkInterfaces[i]?.Value;
             }
 
         }
@@ -386,7 +397,12 @@ namespace TIAGroupCopyCLI.Models
         }
         public void DelecteOldSubnet()
         {
-            originalSubnet.Delete();
+            try
+            {
+                originalSubnet.Delete();
+            }
+            catch (NullReferenceException)
+            { }
         }
 
         #endregion methods
