@@ -245,6 +245,24 @@ namespace TIAGroupCopyCLI.Models
         public void GetAllPortsAndPartners()
         {
 
+            foreach (NetworkInterface currentInterface in FirstPnNetworkInterfaces)
+            {
+                foreach(NetworkPort currentPort in currentInterface.Ports)
+                {
+                    //try
+                    {
+                        NetworkPortsAndPartners.Add(new PortAndPartnerPort(currentPort));
+                    }
+                    //catch
+                    {
+                    }
+                }
+            }
+        }
+
+        public void xGetAllPortsAndPartners()
+        {
+
             foreach (Device currentDevice in AllDevices)
             {
                 IList<DeviceItem> tempPnInterfacesDeviceItems = Service.GetDeviceItemsWithAttribute(currentDevice.DeviceItems, "InterfaceType", "Ethernet");

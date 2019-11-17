@@ -121,10 +121,13 @@ namespace TIAGroupCopyCLI.Models
         {
             if ((AxisHardwareConnection != null) && isConnected)
             {
-
+                try
+                {
                     AxisHardwareConnection.ActorInterface.Disconnect();
                     AxisHardwareConnection.ActorInterface.Connect(addressIn, addressOut, connectOption);
-
+                }
+                catch (EngineeringTargetInvocationException)
+                { }
             }
 
         }
@@ -191,9 +194,14 @@ namespace TIAGroupCopyCLI.Models
             UpperBoundForFDestinationAddresses_attribues = Service.Get1ValueAndDeviceItemWithAttribute(currentDevice.DeviceItems, "Failsafe_UpperBoundForFDestinationAddresses");
             //xFDestinationAddress_attribues = Service.GetValueAndDeviceItemsWithAttribute(currentDevice.DeviceItems, "Failsafe_FDestinationAddress");
 
-            originalSubnet = FirstPnNetworkInterfaces[0].Nodes[0].ConnectedSubnet;
-            originalIoSystem = FirstPnNetworkInterfaces[0].IoConnectors[0].ConnectedToIoSystem;
-
+            try
+            {
+                originalSubnet = FirstPnNetworkInterfaces[0].Nodes[0].ConnectedSubnet;
+                originalIoSystem = FirstPnNetworkInterfaces[0].IoConnectors[0].ConnectedToIoSystem;
+            }
+            catch (EngineeringTargetInvocationException)
+            {
+            }
             //GetAll_I_DeviceParnerAdresses();
 
             plcSoftware = Service.GetPlcSoftware(currentDevice);
@@ -226,6 +234,17 @@ namespace TIAGroupCopyCLI.Models
         }
 
         public void GetAll_iDeviceParnerIoAdresses()
+        {
+            try
+            {
+                GetAll_iDeviceParnerIoAdresses_Internal(); //this is not possible in V15.0
+            }
+            catch(MissingMethodException) 
+            {
+            }
+        }
+
+        private void GetAll_iDeviceParnerIoAdresses_Internal()
         {
             foreach (TransferArea currentTransferArea in FirstPnNetworkInterfaces[0].TransferAreas)
             {
@@ -309,7 +328,7 @@ namespace TIAGroupCopyCLI.Models
                     };
                 }
 
-                PnDeviceNumberOfFirstPnNetworkInterfaces[i].Value = aTemplatePlc.PnDeviceNumberOfFirstPnNetworkInterfaces[i].Value;
+                PnDeviceNumberOfFirstPnNetworkInterfaces[i].Value = aTemplatePlc.PnDeviceNumberOfFirstPnNetworkInterfaces[i]?.Value;
             }
 
         }
@@ -347,11 +366,16 @@ namespace TIAGroupCopyCLI.Models
 
         public void CreateNewIoSystem(Subnet aSubnet, string aPrefix)
         {
-            string IoSystemName = FirstPnNetworkInterfaces[0].IoControllers[0].IoSystem.Name;
-            FirstPnNetworkInterfaces[0].Nodes[0].DisconnectFromSubnet();
-            FirstPnNetworkInterfaces[0].Nodes[0].ConnectToSubnet(aSubnet);
-            newIoSystem = FirstPnNetworkInterfaces[0].IoControllers[0].CreateIoSystem(aPrefix + IoSystemName);
-                       
+            try
+            {
+                string IoSystemName = FirstPnNetworkInterfaces[0].IoControllers[0].IoSystem.Name;
+                FirstPnNetworkInterfaces[0].Nodes[0].DisconnectFromSubnet();
+                FirstPnNetworkInterfaces[0].Nodes[0].ConnectToSubnet(aSubnet);
+                newIoSystem = FirstPnNetworkInterfaces[0].IoControllers[0].CreateIoSystem(aPrefix + IoSystemName);
+            }
+            catch (NullReferenceException)
+            { }
+
         }
 
         public void ConnectToMasterIoSystem(IoSystem aIoSystem)
@@ -386,7 +410,12 @@ namespace TIAGroupCopyCLI.Models
         }
         public void DelecteOldSubnet()
         {
-            originalSubnet.Delete();
+            try
+            {
+                originalSubnet.Delete();
+            }
+            catch (NullReferenceException)
+            { }
         }
 
         #endregion methods

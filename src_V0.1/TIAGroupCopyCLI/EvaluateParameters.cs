@@ -12,6 +12,7 @@ namespace TIAGroupCopyCLI.Para
     {
         #region Filed
         public string ProjectPath;
+        public string ProjectVersion;
         public string TemplateGroupName;
         public string NewGroupNamePrefix;
         public string Prefix = "";
@@ -28,22 +29,22 @@ namespace TIAGroupCopyCLI.Para
         {
 
             int currentArgIdx = 0;
-            #region mandatory Argument 1 to 4
+
             if ( (aArgs == null) || (aArgs.Count() == 0) || (aArgs.Count() < 4) )
             {
                 Program.Progress("Not enough parameters.");
                 Description();
                 return;
             }
-            
 
-
-            if  ( (aArgs[0] == @"\?") || (aArgs[0] == @"/?") || (aArgs[0] == "?") )
+            if ( (aArgs[0] == @"\?") || (aArgs[0] == @"/?") || (aArgs[0] == "?") || (aArgs[0] == "-?"))
             {
                 Description();
                 return;
             }
+
             
+            #region Argument ProjectPath
 
             if (! File.Exists(aArgs[currentArgIdx]))
             {
@@ -53,27 +54,70 @@ namespace TIAGroupCopyCLI.Para
             }
             ProjectPath = aArgs[currentArgIdx];
 
-            NewGroupNamePrefix = aArgs[++currentArgIdx];
+
+            uint projectMajorVersion;
+            uint projectMinorVersion;
+
+            string extension = Path.GetExtension(ProjectPath);
+
+            if (extension.Substring(1, 2) != "ap")
+            {
+                Program.Progress("The extions does not start with \".ap\"and therefor is not a TIAP project.");
+                Description();
+                return;
+            }
+            int underscorePosition = extension.IndexOf('_',3);
+            if (underscorePosition == -1) underscorePosition = extension.Length;
+
+            if (underscorePosition <= 3)
+            {
+                Program.Progress("Extension format invalid.");
+                Description();
+                return;
+            }
+            try
+            {
+                projectMajorVersion = (uint)Int32.Parse(extension.Substring(3, underscorePosition - 3));
+                if (underscorePosition < extension.Length)
+                {
+                    projectMinorVersion = (uint)Int32.Parse(extension.Substring(underscorePosition+1, extension.Length - underscorePosition - 1));
+                }
+                else
+                {
+                    projectMinorVersion = 0;
+                }
+            }
+            catch(Exception e)
+            {
+                Program.FaultMessage($"Could not convert extension {extension} to version number.", e);
+                Description();
+                return;
+            }
+            ProjectVersion = projectMajorVersion.ToString() + "." + projectMinorVersion.ToString();
+
+            #endregion
+
+            #region Argument GroupNamePrefix
+            currentArgIdx++;
+            NewGroupNamePrefix = aArgs[currentArgIdx];
             TemplateGroupName = NewGroupNamePrefix;
 
-            //char idx = TemplateGroupName[TemplateGroupName.Length - 1];// TemplateGroupName.LastIndexOf(" ");
             while (TemplateGroupName[TemplateGroupName.Length - 1].Equals(' '))
             {
                 TemplateGroupName = TemplateGroupName.Substring(0, TemplateGroupName.Length - 1);
-                //idx = TemplateGroupName[TemplateGroupName.Length - 1];
             }
-            
+            #endregion
 
+            #region Argument Prefix
+            currentArgIdx++;
+            Prefix = aArgs[currentArgIdx];
+            #endregion
 
-            //TemplateGroupName = aArgs[++currentArgIdx];
-
-
-
-            Prefix = aArgs[++currentArgIdx];
-
+            #region Argument NumOfGroups
+            currentArgIdx++;
             try
             {
-                NumOfGroups = UInt32.Parse(aArgs[++currentArgIdx]);
+                NumOfGroups = UInt32.Parse(aArgs[currentArgIdx]);
             }
             catch (Exception e)
             {
@@ -81,7 +125,6 @@ namespace TIAGroupCopyCLI.Para
                 Description();
                 return;
             }
-
             
             if (NumOfGroups < 1 )
             {
@@ -94,7 +137,6 @@ namespace TIAGroupCopyCLI.Para
                 Description();
                 return;
             }
-
             #endregion
 
             #region Agument FBaseAddrOffset
@@ -194,12 +236,12 @@ namespace TIAGroupCopyCLI.Para
             Program.Progress("The tool Starts with the following settings:");
             Program.Progress("");
             Program.Progress("ProjectPath           = " + ProjectPath);
+            Program.Progress("Project Version       = " + ProjectVersion);
             Program.Progress("GroupName             = " + TemplateGroupName);
             Program.Progress("Prefix                = " + Prefix);
             Program.Progress("NumberOfGroups        = " + NumOfGroups);
             Program.Progress("FBaseAddrOffset       = " + FBaseAddrOffset);
             Program.Progress("FDestAddrOffset       = " + FDestAddrOffset);
-            //Program.Progress("IDeviceDeviceNoOffset = " + IDeviceDeviceNumberOffset);
             Program.Progress("IDeviceIoAddrOffset   = " + IDeviceIoAddressOffset);
             Program.Progress("");
 

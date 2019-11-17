@@ -42,8 +42,11 @@ using TIAGroupCopyCLI.Para;
 
 namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 {
+    
     class Program
     {
+        const string TIAP_VERSION_USED_FOR_TESTING = "15.1";
+        const string OPENESS_VERSION_USED_FOR_TESTING = "15.1.0.0";
 
 
         static Parameters Parameters;
@@ -53,9 +56,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
         static void Main(string[] args)
         {
-            MyResolverClass.AddAssemblyResolver();
-            //AppDomain.CurrentDomain.AssemblyResolve += MyResolverClass.MyResolver;
-            //AppDomain.CurrentDomain.AssemblyResolve += Resolver.OnResolve;
+            
             Heandlers.AddAppExceptionHaenlder();
 
             //string assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
@@ -69,14 +70,19 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
             Parameters = new Parameters(args);
 
- 
-
-
             if (!Parameters.ParameterOK)
             {
                 Console.ReadLine();
                 return;
             }
+
+            if (!Heandlers.SelectAssmebly(Parameters.ProjectVersion, TIAP_VERSION_USED_FOR_TESTING, OPENESS_VERSION_USED_FOR_TESTING))
+            {
+                Console.ReadLine();
+                return;
+            }
+            
+            Heandlers.AddAssemblyResolver();
 
 
 
@@ -94,25 +100,6 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
         //=================================================================================================
         private static void RunTiaPortal()
         {
-            #region test: hardcode path
-            /*
-            Console.WriteLine("!!!with hardcoded project path for testing!!!");
-
-            Parameters.ProjectPath = @"D:\Source\TiaGroupCopyCli\TIA_samples\EMS\EMS.ap15_1";
-             Parameters.TemplateGroupName = "EMS_Controller";
-             Parameters.NewGroupNamePrefix = "EMS_Controller ";
-             Parameters.Prefix = "ems";
-            
-           Parameters.ProjectPath = "D:\\KnesMX\\source\\TIA\\Groups\\Groups.ap15_1";
-           Parameters.TemplateGroupName = "Group_";
-           Parameters.Prefix = "sk";
-           Parameters.NumOfGroups = 3;
-           Parameters.FBaseAddrOffset = 1;
-           Parameters.FDestAddrOffset = 100;
-           Parameters.IDeviceDeviceNumberOffset = 1;
-           Parameters.IDeviceIoAddressOffset = 100;
-           */
-            #endregion
 
             #region tia and project
             Progress("Check running TIA Portal");
@@ -189,7 +176,10 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             #region get basic info from template group
             IList<Device> templatePlcDevices = Service.GetPlcDevicesInGroup(templateGroup);
             ManagePlc templatePlcs = new ManagePlc(templatePlcDevices);
+
+
             templatePlcs.GetAll_iDeviceParnerIoAdresses();
+
 
             if (templatePlcs.AllDevices.Count != 1)
             {
