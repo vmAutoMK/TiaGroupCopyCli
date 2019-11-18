@@ -263,7 +263,8 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
                 ioDevices.ChangeIpAddresses(groupCounter - 1);
                 ioDevices.SwitchIoSystem(templatePlcs.originalSubnet, plcs.newIoSystem);
-                ioDevices.AdjustFDestinationAddress(Parameters.FDestAddrOffset * (groupCounter - 1), (ulong)templatePlcs.LowerBoundForFDestinationAddresses_attribues.Value, (ulong)templatePlcs.UpperBoundForFDestinationAddresses_attribues.Value);
+                if (templatePlcs.LowerBoundForFDestinationAddresses_attribues?.Value != null)
+                    ioDevices.AdjustFDestinationAddress(Parameters.FDestAddrOffset * (groupCounter - 1), (ulong)templatePlcs.LowerBoundForFDestinationAddresses_attribues.Value, (ulong)templatePlcs.UpperBoundForFDestinationAddresses_attribues.Value);
                 ioDevices.Restore();
                 ioDevices.ChangePnDeviceNames(currentPrefix);
 
@@ -275,7 +276,8 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
                 drives.ChangeIpAddresses(groupCounter - 1);
                 drives.SwitchIoSystem(templatePlcs.originalSubnet, plcs.newIoSystem);
-                drives.AdjustFDestinationAddress(Parameters.FDestAddrOffset * (groupCounter - 1), (ulong)templatePlcs.LowerBoundForFDestinationAddresses_attribues.Value, (ulong)templatePlcs.UpperBoundForFDestinationAddresses_attribues.Value);
+                if (templatePlcs.LowerBoundForFDestinationAddresses_attribues?.Value != null)
+                    drives.AdjustFDestinationAddress(Parameters.FDestAddrOffset * (groupCounter - 1), (ulong)templatePlcs.LowerBoundForFDestinationAddresses_attribues.Value, (ulong)templatePlcs.UpperBoundForFDestinationAddresses_attribues.Value);
                 drives.Restore();
                 drives.ChangePnDeviceNames(currentPrefix);
 

@@ -211,14 +211,15 @@ namespace TIAGroupCopyCLI.Models
 
         public new  void  Restore()
         {
+            if (CentralFSourceAddress_attribue != null)
+            {
+                CentralFSourceAddress_attribue.Restore();
+                LowerBoundForFDestinationAddresses_attribues.Restore();
+                UpperBoundForFDestinationAddresses_attribues.Restore();
 
-            CentralFSourceAddress_attribue.Restore();
-            LowerBoundForFDestinationAddresses_attribues.Restore();
-            UpperBoundForFDestinationAddresses_attribues.Restore();
-
-            //ulong lower = (ulong)LowerBoundForFDestinationAddresses_attribues.Value;
-            //ulong upper = (ulong)UpperBoundForFDestinationAddresses_attribues.Value;
-
+                //ulong lower = (ulong)LowerBoundForFDestinationAddresses_attribues.Value;
+                //ulong upper = (ulong)UpperBoundForFDestinationAddresses_attribues.Value;
+            }
             base.Restore();
 
             //foreach (AttributeAndDeviceItem item in xFDestinationAddress_attribues)  //.Where(i => true)
@@ -296,9 +297,9 @@ namespace TIAGroupCopyCLI.Models
 
         public void CopyFromTemplate(ManagePlc aTemplatePlc)
         {
-            CentralFSourceAddress_attribue.Value = aTemplatePlc.CentralFSourceAddress_attribue.Value;
-            LowerBoundForFDestinationAddresses_attribues.Value = aTemplatePlc.LowerBoundForFDestinationAddresses_attribues.Value;
-            UpperBoundForFDestinationAddresses_attribues.Value = aTemplatePlc.UpperBoundForFDestinationAddresses_attribues.Value;
+            if (aTemplatePlc.CentralFSourceAddress_attribue?.Value != null) CentralFSourceAddress_attribue.Value = aTemplatePlc.CentralFSourceAddress_attribue?.Value;
+            if (aTemplatePlc.LowerBoundForFDestinationAddresses_attribues?.Value != null) LowerBoundForFDestinationAddresses_attribues.Value = aTemplatePlc.LowerBoundForFDestinationAddresses_attribues?.Value;
+            if (aTemplatePlc.UpperBoundForFDestinationAddresses_attribues?.Value != null) UpperBoundForFDestinationAddresses_attribues.Value = aTemplatePlc.UpperBoundForFDestinationAddresses_attribues?.Value;
 
 
             for (int i = 0; i < aTemplatePlc.FDestinationAddress_attribues.Count; i++)
@@ -334,21 +335,24 @@ namespace TIAGroupCopyCLI.Models
         }
         public  void  AdjustFSettings(ulong FSourceOffset, ulong aFDestOffset)
         {
-            ulong oldLower = (ulong)LowerBoundForFDestinationAddresses_attribues.Value;
-            ulong oldUpper = (ulong)UpperBoundForFDestinationAddresses_attribues.Value;
+            if (CentralFSourceAddress_attribue != null)
+            {
+                ulong oldLower = (ulong)LowerBoundForFDestinationAddresses_attribues.Value;
+                ulong oldUpper = (ulong)UpperBoundForFDestinationAddresses_attribues.Value;
 
-            CentralFSourceAddress_attribue.AddToValue(FSourceOffset);
-            LowerBoundForFDestinationAddresses_attribues.AddToValue(aFDestOffset);
-            UpperBoundForFDestinationAddresses_attribues.AddToValue(aFDestOffset);
+                CentralFSourceAddress_attribue.AddToValue(FSourceOffset);
+                LowerBoundForFDestinationAddresses_attribues.AddToValue(aFDestOffset);
+                UpperBoundForFDestinationAddresses_attribues.AddToValue(aFDestOffset);
 
-            base.AdjustFDestinationAddress(aFDestOffset, oldLower, oldUpper);
-            //foreach (AttributeAndDeviceItem item in xFDestinationAddress_attribues)  //.Where(i => true)
-            //{
-            //   if (((ulong)item.Value >= oldUower) && ((ulong)item.Value <= oldLpper))
-            //    {
-            //        item.AddToValue(aFDestOffset);
-            //    }
-            //}
+                base.AdjustFDestinationAddress(aFDestOffset, oldLower, oldUpper);
+                //foreach (AttributeAndDeviceItem item in xFDestinationAddress_attribues)  //.Where(i => true)
+                //{
+                //   if (((ulong)item.Value >= oldUower) && ((ulong)item.Value <= oldLpper))
+                //    {
+                //        item.AddToValue(aFDestOffset);
+                //    }
+                //}
+            }
 
         }
 
@@ -368,10 +372,12 @@ namespace TIAGroupCopyCLI.Models
         {
             try
             {
+                //string tempIPaddress = (string)FirstPnNetworkInterfaces[0].Nodes[0].GetAttribute("Address");
                 string IoSystemName = FirstPnNetworkInterfaces[0].IoControllers[0].IoSystem.Name;
                 FirstPnNetworkInterfaces[0].Nodes[0].DisconnectFromSubnet();
                 FirstPnNetworkInterfaces[0].Nodes[0].ConnectToSubnet(aSubnet);
                 newIoSystem = FirstPnNetworkInterfaces[0].IoControllers[0].CreateIoSystem(aPrefix + IoSystemName);
+                //FirstPnNetworkInterfaces[0].Nodes[0].SetAttribute("Address", tempIPaddress);
             }
             catch (NullReferenceException)
             { }

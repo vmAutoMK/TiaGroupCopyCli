@@ -3,8 +3,9 @@
     "",
     "\\Bin_Releases",
     "\\src_V0.1",
-    "\\src_V0.1\\TIAGroupCopyCLI"
+    "\\src_V0.1\\TIAGroupCopyCLI",
+    "\\TIA_samples"
   ],
-  "SelectedNode": "\\TIA_samples",
+  "SelectedNode": "\\TIA_samples\\cl parameters.txt",
   "PreviewInSolutionExplorer": false
 }
