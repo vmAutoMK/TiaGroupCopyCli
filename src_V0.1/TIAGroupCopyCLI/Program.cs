@@ -57,7 +57,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
         static void Main(string[] args)
         {
             
-            Heandlers.AddAppExceptionHaenlder();
+            //Heandlers.AddAppExceptionHaenlder();
 
             //string assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             string fileVersion = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
@@ -76,14 +76,14 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
                 return;
             }
 
-            if (!Heandlers.SelectAssmebly(Parameters.ProjectVersion, TIAP_VERSION_USED_FOR_TESTING, OPENESS_VERSION_USED_FOR_TESTING))
-            {
-                Console.ReadLine();
-                return;
-            }
+            //if (!Heandlers.SelectAssmebly(Parameters.ProjectVersion, TIAP_VERSION_USED_FOR_TESTING, OPENESS_VERSION_USED_FOR_TESTING))
+            //'{
+            //'    Console.ReadLine();
+            //'    return;
+            //}
             
-            Heandlers.AddAssemblyResolver();
-
+            //Heandlers.AddAssemblyResolver();
+            MyResolverClass.AddAssemblyResolver();
 
 
             RunTiaPortal();

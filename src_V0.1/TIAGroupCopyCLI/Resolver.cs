@@ -28,6 +28,7 @@ namespace TiaOpennessHelper.Utils
             string fullPath = Path.GetFullPath(path);
             if (File.Exists(fullPath))
             {
+                Program.Progress("loading Assembly: " + fullPath);
                 return Assembly.LoadFrom(fullPath);
             }
             else if (name == "Siemens.Engineering.dll")
