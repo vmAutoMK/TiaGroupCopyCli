@@ -167,6 +167,86 @@ namespace TIAHelper.Services
 
     public static class Service
     {
+
+        public static void OpenProject(string ProjectPath, ref TiaPortal tiaPortal, ref Project project)
+        {
+
+            //First check if project already open
+
+            foreach (TiaPortalProcess tiaPortalProcess in TiaPortal.GetProcesses())
+            {
+                string currentProjectPath = ((tiaPortalProcess.ProjectPath != null && !string.IsNullOrEmpty(tiaPortalProcess.ProjectPath.FullName)) ? Path.GetFullPath(tiaPortalProcess.ProjectPath.FullName) : "None");
+                Console.WriteLine("tiaPortalProcess: " + tiaPortalProcess.Mode);
+                Console.WriteLine("ProjectPath: " + currentProjectPath);
+                Console.WriteLine("");
+
+                //string currentProject = ((tiaPortalProcess.ProjectPath != null && !string.IsNullOrEmpty(tiaPortalProcess.ProjectPath.FullName)) ? tiaPortalProcess.ProjectPath.FullName : "None");
+                if (currentProjectPath == ProjectPath)
+                {
+                    Console.WriteLine("Attaching to TIA Portal");
+                    try
+                    {
+                        tiaPortal = tiaPortalProcess.Attach();
+                        project = tiaPortal.Projects[0];
+                        return;
+                    }
+                    catch (Siemens.Engineering.EngineeringSecurityException e)
+                    {
+                        tiaPortal = null;
+                        project = null;
+                        Program.CancelGeneration("Could not start TIAP. Please achnoledge the \"Openness access\" security dialog box with [Yes] or [Yes to all] to grant access or if there was no dialog box add the user to the user group \"Siemens TIA Openness\". (see exception message below for details)", e);
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        Program.CancelGeneration("Could not attach to running TIAP with open project.", e);
+                        project = null;
+                        
+                    }
+                    
+                }
+            }
+
+            if ((tiaPortal == null) || (project == null))
+            {
+
+
+                Console.WriteLine("Starting TIA Portal");
+                try
+                {
+                    tiaPortal = new TiaPortal(TiaPortalMode.WithoutUserInterface);
+                }
+                catch (Siemens.Engineering.EngineeringSecurityException e)  //-2146233088
+                {
+                    tiaPortal = null;
+                    project = null;
+                    Program.CancelGeneration("Could not start TIAP. Please achnoledge the \"Openness access\" security dialog box with [Yes] or [Yes to all] to grant access or if there was no dialog box add the user to the user group \"Siemens TIA Openness\". (see exception message below for details)", e);
+                    return;
+                }
+                catch (Exception e)
+                {
+                    Program.CancelGeneration("Could not start TIAP.", e);
+                    return;
+                }
+
+                Console.WriteLine("TIA Portal has started");
+                ProjectComposition projects = tiaPortal.Projects;
+                Console.WriteLine("Opening Project...");
+                FileInfo projectPath = new FileInfo(ProjectPath); //edit the path according to your project
+                                                                  //Project project = null;
+                try
+                {
+                    project = projects.Open(projectPath);
+                }
+                catch (Exception e)
+                {
+                    Program.CancelGeneration("Could not open project " + projectPath.FullName, e);
+                    return;
+                }
+            }
+
+        }
+
         public static void AttachToTIA(string ProjectPath, ref TiaPortal tiaPortal, ref Project project)
         {
 
@@ -186,6 +266,11 @@ namespace TIAHelper.Services
                         tiaPortal = tiaPortalProcess.Attach();
                         project = tiaPortal.Projects[0];
                     }
+                    catch ( Siemens.Engineering.EngineeringSecurityException e)
+                    {
+                        Program.CancelGeneration("Could not attach to running TIAP with open project.", e);
+                        project = null;
+                    }
                     catch (Exception e)
                     {
                         Program.CancelGeneration("Could not attach to running TIAP with open project.", e);
@@ -197,7 +282,7 @@ namespace TIAHelper.Services
 
         }
 
-        public static void OpenProject(string ProjectPath, ref TiaPortal tiaPortal, ref Project project)
+        public static void OpenProjectOnly(string ProjectPath, ref TiaPortal tiaPortal, ref Project project)
         {
             Console.WriteLine("Starting TIA Portal");
             try

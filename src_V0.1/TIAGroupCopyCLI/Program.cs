@@ -46,7 +46,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
     class Program
     {
         const string TIAP_VERSION_USED_FOR_TESTING = "15.1";
-        const string OPENESS_VERSION_USED_FOR_TESTING = "15.1.0.0";
+        const string OPENESS_VERSION_USED_FOR_TESTING = TIAP_VERSION_USED_FOR_TESTING + ".0.0";
 
 
         static Parameters Parameters;
@@ -76,14 +76,14 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
                 return;
             }
 
-            //if (!Heandlers.SelectAssmebly(Parameters.ProjectVersion, TIAP_VERSION_USED_FOR_TESTING, OPENESS_VERSION_USED_FOR_TESTING))
-            //'{
-            //'    Console.ReadLine();
-            //'    return;
-            //}
+            if (!Heandlers.SelectAssmebly(Parameters.ProjectVersion, TIAP_VERSION_USED_FOR_TESTING, OPENESS_VERSION_USED_FOR_TESTING))
+            {
+                Console.ReadLine();
+                return;
+            }
             
-            //Heandlers.AddAssemblyResolver();
-            MyResolverClass.AddAssemblyResolver();
+            Heandlers.AddAssemblyResolver();
+            //MyResolverClass.AddAssemblyResolver();
 
 
             RunTiaPortal();
@@ -105,13 +105,8 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             Progress("Check running TIA Portal");
             bool tiaStartedWithoutInterface = false;
 
-            Service.AttachToTIA(Parameters.ProjectPath, ref tiaPortal, ref project);
+            Service.OpenProject(Parameters.ProjectPath, ref tiaPortal, ref project);
                         
-            if ((tiaPortal == null) || (project == null))
-            {
-                Service.OpenProject(Parameters.ProjectPath, ref tiaPortal, ref project);
-                tiaStartedWithoutInterface = true;
-            }
             if ((tiaPortal == null) || (project == null))
             {
                 CancelGeneration("Could not open project.");
