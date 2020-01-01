@@ -13,10 +13,14 @@ using TIAGroupCopyCLI;
 namespace TiaOpennessHelper.Utils
 {
 
-
     public static class Heandlers
     {
         private const string BASE_PATH = "SOFTWARE\\Siemens\\Automation\\Openness\\";
+        private const string BASE_PATH64 = "SOFTWARE\\WOW6432Node\\Siemens\\Automation\\Openness";
+        private const string INSTALL_PATH_PRE = @"C:\Program Files\Siemens\Automation\Portal V";
+        private const string BIN_PATH_POST = @"\Bin\Siemens.Automation.Portal.exe";
+        private const string API_PATH_SUBFOLDER = @"\PublicAPI\V";
+        private const string API_PATH_POST = @"\Siemens.Engineering.dll";
         private static string AssemblyPath = "";
 
 
@@ -25,84 +29,81 @@ namespace TiaOpennessHelper.Utils
 
             string selectedTiaVersion = "";
             string selectedAssemblyVersion = "";
+            AssemblyPath = "";
 
             Version projectV = new Version(projectVersion);
+            Version preferedTiaV = new Version(preferedTiaVersion);
             Version preferedAssemblyV = new Version(preferedAssemblyVersion);
 
             //check if TIA protal version for this project is isntalled
             List<string> tiaVersionsString = GetEngineeringVersions();
-            if (tiaVersionsString.Count == 0)
+            if (tiaVersionsString.Count > 0)
             {
-                Program.Progress($"No installed TIA version found.");
-                return false;
-            }
-            foreach (string currentV in tiaVersionsString)
-            {
-                Version tiaVersion = new Version(currentV);
-                if (tiaVersion == projectV)
+                foreach (string currentTiaV in tiaVersionsString)
                 {
-                    selectedTiaVersion = currentV;
-                }
-            }
-            if (selectedTiaVersion == "")
-            {
-                Program.Progress($"TIAP version not found for project version {projectVersion}");
-                Program.Progress($"Found this TIAP versions installed:");
-                foreach (string currentV in tiaVersionsString)
-                {
-                    Program.Progress($"V{currentV}");
-                }
-                return false;
-            }
-            if (selectedTiaVersion != preferedTiaVersion)
-            {
-                Program.Progress($"Application was tested with TIAP version {preferedTiaVersion}");
-                Program.Progress($"However, application will run with TIAP version {selectedTiaVersion}");
-            }
-            else
-            {
-                Program.Progress($"Aapplication will run with TIAP version {selectedTiaVersion}");
-            }
+                    Version tiaVersion = new Version(currentTiaV);
+                    if (tiaVersion == projectV)
+                    {
+                        selectedTiaVersion = currentTiaV;
 
-            //select openness version closest to wha was used during development
-            List<string> assmblyVersionsString = GetOpennessAssmblyVersions(selectedTiaVersion);
-            if (assmblyVersionsString.Count == 0)
-            {
-                Program.Progress($"No installed Openness version found.");
-                return false;
-            }
-            foreach (string currentV in assmblyVersionsString)
-            {
-                selectedAssemblyVersion = currentV;
-                Version assemblyVersion = new Version(currentV);
-                if (assemblyVersion >= preferedAssemblyV)
-                {
-                    break;
+                        //select openness version closest to what was used during development
+                        List<string> assmblyVersionsString = GetOpennessAssmblyVersions(selectedTiaVersion);
+                        if (assmblyVersionsString.Count > 0)
+                        {
+                            foreach (string currentAssemblyV in assmblyVersionsString)
+                            {
+                                selectedAssemblyVersion = currentAssemblyV;
+                                Version assemblyVersion = new Version(currentAssemblyV);
+                                AssemblyPath = GetOpennessAssemblyPath(selectedTiaVersion, selectedAssemblyVersion);
+                                if (assemblyVersion >= preferedAssemblyV)
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
-            if (selectedAssemblyVersion == "")
+            if (AssemblyPath == "")
             {
-                Program.Progress($"No fitting Openness version found.");
-                Program.Progress($"Found this Openness versions installed:");
-                foreach (string currentV in assmblyVersionsString)
+                if (File.Exists(INSTALL_PATH_PRE + projectV.Major + "_" + projectV.Minor + BIN_PATH_POST))
                 {
-                    Program.Progress($"V{currentV}");
+                    selectedTiaVersion = projectV.Major + "." + projectV.Minor;
+
+                    if (projectV < preferedTiaV)
+                    {
+                        if (File.Exists(INSTALL_PATH_PRE + projectV.Major + "_" + projectV.Minor + API_PATH_SUBFOLDER + projectV.Major + "_" + projectV.Minor + API_PATH_POST))
+                        {
+                            selectedAssemblyVersion = projectV.Major + "." + projectV.Minor;
+                            AssemblyPath = INSTALL_PATH_PRE + projectV.Major + "_" + projectV.Minor + API_PATH_SUBFOLDER + preferedTiaV.Major + "." + preferedTiaV.Minor + API_PATH_POST;
+                        }
+                        else
+                        {
+                            Program.Progress($"Openness dll version {projectVersion} not found (" + INSTALL_PATH_PRE + projectV.Major + "_" + projectV.Minor + API_PATH_SUBFOLDER + projectV.Major + "_" + projectV.Minor + API_PATH_POST + ")");
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        if (File.Exists(INSTALL_PATH_PRE + projectV.Major + "_" + projectV.Minor + API_PATH_SUBFOLDER + preferedTiaV.Major + "." + preferedTiaV.Minor + API_PATH_POST))
+                        {
+                            selectedAssemblyVersion = preferedTiaV.Major + "." + preferedTiaV.Minor + ".0.0";
+                            AssemblyPath = INSTALL_PATH_PRE + projectV.Major + "_" + projectV.Minor + API_PATH_SUBFOLDER + preferedTiaV.Major + "." + preferedTiaV.Minor + API_PATH_POST;
+                        }
+                        else
+                        {
+                            Program.Progress($"Openness dll version {projectVersion} not found (" + INSTALL_PATH_PRE + projectV.Major + "_" + projectV.Minor + API_PATH_SUBFOLDER + preferedTiaV.Major + "." + preferedTiaV.Minor + API_PATH_POST + ")");
+                            return false;
+                        }
+                    }
                 }
-                return false;
+                else
+                {
+                    Program.Progress($"TIA version {projectVersion} not found (" + INSTALL_PATH_PRE + projectV.Major + "_" + projectV.Minor + BIN_PATH_POST + ")");
+                    return false;
+                }
             }
-
-            if (selectedAssemblyVersion != preferedAssemblyVersion)
-            {
-                Program.Progress($"Application was tested with Openness version {preferedAssemblyVersion}");
-                Program.Progress($"However, application will run with Openness version {selectedAssemblyVersion}");
-            }
-            else
-            {
-                Program.Progress($"Application will run with Openness version {selectedAssemblyVersion}");
-            }
-
-            string AssemblyPath = GetOpennessAssemblyPath(selectedTiaVersion, selectedAssemblyVersion);
 
 
             if (AssemblyPath == "")
@@ -117,45 +118,101 @@ namespace TiaOpennessHelper.Utils
             }
 
 
+            if (selectedTiaVersion != preferedTiaVersion)
+            {
+                Program.Progress($"Application was tested with TIAP version {preferedTiaVersion}");
+                Program.Progress($"However, application will run with TIAP version {selectedTiaVersion}");
+            }
+            else
+            {
+                Program.Progress($"Application will run with TIAP version {selectedTiaVersion}");
+            }
+
+
+            if (selectedAssemblyVersion != preferedAssemblyVersion)
+            {
+                Program.Progress($"Application was tested with Openness version {preferedAssemblyVersion}");
+                Program.Progress($"However, application will run with Openness version {selectedAssemblyVersion}");
+            }
+            else
+            {
+                Program.Progress($"Application will run with Openness version {selectedAssemblyVersion}");
+            }
+
             return true;
         }
 
         public static List<string> GetEngineeringVersions()
         {
-            RegistryKey key = GetRegistryKey(BASE_PATH);
+            RegistryKey key32 = GetRegistryKey(BASE_PATH);
 
-            if (key != null)
+            if (key32 != null)
             {
-                var names = key.GetSubKeyNames().OrderBy(x => x).ToList();
-                key.Dispose();
+                var names = key32.GetSubKeyNames().OrderBy(x => x).ToList();
+                key32.Dispose();
 
-                return names;
+                if (names != null) return names;
             }
+
+            RegistryKey key64 = GetRegistryKey(BASE_PATH);
+
+            if (key64 != null)
+            {
+                var names = key64.GetSubKeyNames().OrderBy(x => x).ToList();
+                key64.Dispose();
+
+                if (names != null) return names;
+            }
+
 
             return new List<string>();
         }
 
         public static List<string> GetOpennessAssmblyVersions(string tiaVersion)
         {
-            RegistryKey key = GetRegistryKey(BASE_PATH + tiaVersion);
+            RegistryKey key32 = GetRegistryKey(BASE_PATH + tiaVersion);
 
-            if (key != null)
+            if (key32 != null)
             {
                 try
                 {
-                    var subKey = key.OpenSubKey("PublicAPI");
+                    var subKey = key32.OpenSubKey("PublicAPI");
 
                     var result = subKey.GetSubKeyNames().OrderBy(x => x).ToList();
 
                     subKey.Dispose();
 
-                    return result;
+                    if (result != null) return result;
                 }
+                catch
+                { }
                 finally
                 {
-                    key.Dispose();
+                    key32.Dispose();
                 }
             }
+
+            RegistryKey key64 = GetRegistryKey(BASE_PATH64 + tiaVersion);
+
+            if (key64 != null)
+            {
+                try
+                {
+                    var subKey = key64.OpenSubKey("PublicAPI");
+
+                    var result = subKey.GetSubKeyNames().OrderBy(x => x).ToList();
+
+                    subKey.Dispose();
+
+                    if (result != null) return result;
+                }
+                catch { }
+                finally
+                {
+                    key64.Dispose();
+                }
+            }
+
 
             return new List<string>();
         }
@@ -168,10 +225,11 @@ namespace TiaOpennessHelper.Utils
             {
                 try
                 {
-                    AssemblyPath = key.GetValue("Siemens.Engineering").ToString();
+                    string assemblyPath = key.GetValue("Siemens.Engineering").ToString();
 
-                    return AssemblyPath;
+                    return assemblyPath;
                 }
+                catch { }
                 finally
                 {
                     key.Dispose();
@@ -212,18 +270,22 @@ namespace TiaOpennessHelper.Utils
             var executingAssembly = Assembly.GetExecutingAssembly();
             var assemblyName = new AssemblyName(args.Name);
 
-            if (assemblyName.Name.EndsWith("Siemens.Engineering")
-                && string.IsNullOrEmpty(AssemblyPath) == false
-                && File.Exists(AssemblyPath))
+            if (assemblyName.Name.EndsWith("Siemens.Engineering"))
             {
-                return Assembly.LoadFrom(AssemblyPath);
+                if (string.IsNullOrEmpty(AssemblyPath) == true)
+                {
+                    Program.Progress("loading Assembly error: No Assembly defined");
+                }
+                else if (!File.Exists(AssemblyPath))
+                {
+                    Program.Progress("loading Assemblyerror: " + AssemblyPath + " does not exists");
+                }
+                else
+                {
+                    Program.Progress("loading Assembly: " + AssemblyPath);
+                    return Assembly.LoadFrom(AssemblyPath);
+                }
             }
-
-            //if (name == "Siemens.Engineering.dll")
-            //{
-            //    Program.Progress("The following DLL does not exits: " + fullPath);
-            //}
-
 
             return null;
         }

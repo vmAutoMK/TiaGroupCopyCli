@@ -31,22 +31,33 @@ using TIAHelper.Services;
 
 namespace TIAGroupCopyCLI.Models
 {
-    interface IDevice
+    public enum DeviceType
     {
+        udefined = 0,
+        Plc = 1,
+        Hmi = 2,
+        Drive = 3,
+        ioDevice = 10,
+        others = 99
+
+    }
+
+    interface IManageDevice
+    {
+
         #region Fields
         //List<Device> AllDevices { get; }
         Device Device { get; }
-        List<ManageNetworkInterface> NetworkInterfaces { get; } 
+        DeviceType DeviceType { get; }
+        List<ManageNetworkInterface> NetworkInterfaces { get; }
 
         #endregion Fields
 
-
         #region Methods
-        void Save();
 
-        void Restore();
+        void SaveConfig();
 
-        void AdjustFDestinationAddress(ulong aFDestOffset, ulong aLower, ulong aUpper);
+        void RestoreConfig_WithAdjustments(string prefix, ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest);
 
         void ChangeTiaName(string aPrefix);
 
@@ -54,7 +65,7 @@ namespace TIAGroupCopyCLI.Models
 
         void ChangeIpAddresse(ulong aIpOffset);
 
-        void SwitchIoSystem(Subnet aSubnet, IoSystem aIoSystem);
+        void Reconnect(Subnet aSubnet, IoSystem aIoSystem);
 
         void DisconnectFromSubnet();
 
@@ -63,7 +74,6 @@ namespace TIAGroupCopyCLI.Models
         void ConnectToIoSystem(IoSystem aIoSystem);
 
         #endregion Methods
-
 
     }
 }

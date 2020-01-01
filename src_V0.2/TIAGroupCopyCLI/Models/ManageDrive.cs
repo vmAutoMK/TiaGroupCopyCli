@@ -49,8 +49,8 @@ namespace TIAGroupCopyCLI.Models
             Telegram = aTelegram;
             if (aTelegram != null)
             {
-                FDestinationAddr = Service.GetAttribute(aTelegram, "Failsafe_FDestinationAddress");
-                StartAddress = Service.GetAttributes(aTelegram.Addresses, "StartAddress");
+                FDestinationAddr = AttributeValue.GetAttribute(aTelegram, "Failsafe_FDestinationAddress");
+                StartAddress = AttributeValue.GetAttributes(aTelegram.Addresses, "StartAddress");
             }
         }
         #endregion Constructor
@@ -60,8 +60,8 @@ namespace TIAGroupCopyCLI.Models
         {
             if (Telegram != null)
             {
-                FDestinationAddr = Service.GetAttribute(Telegram, "Failsafe_FDestinationAddress");
-                StartAddress = Service.GetAttributes(Telegram.Addresses, "StartAddress");
+                FDestinationAddr = AttributeValue.GetAttribute(Telegram, "Failsafe_FDestinationAddress");
+                StartAddress = AttributeValue.GetAttributes(Telegram.Addresses, "StartAddress");
             }
 
         }
@@ -78,18 +78,44 @@ namespace TIAGroupCopyCLI.Models
 
             }
         }
-        public void RestoreFDestAndIoAddresses()
+
+        public void RestoreConfig_WithAdjustments(ulong aOffset, ulong aLower, ulong aUpper)
         {
             if (Telegram != null)
             {
                 if (FDestinationAddr != null)
                 {
-                    Service.SetAttribute(Telegram, "Failsafe_FDestinationAddress", FDestinationAddr);
+
+                    if (((uint)FDestinationAddr.Value >= aLower) && ((uint)FDestinationAddr.Value <= aUpper))
+                    {
+                        FDestinationAddr.AddToValue(aOffset);
+                    }
+                    SingleAttribute.SetAttribute_Wrapper(Telegram, "Failsafe_FDestinationAddress", FDestinationAddr.Value);
+                }
+
+                int i = 0;
+                foreach (Address currentAddress in Telegram.Addresses)
+                {
+                    SingleAttribute.SetAttribute_Wrapper(currentAddress, "StartAddress", StartAddress[i].Value);
+                    i++;
+                }
+            }
+
+        }
+
+        public void Restore_FDestAndIoAddresses()
+        {
+            if (Telegram != null)
+            {
+                if (FDestinationAddr != null)
+                {
+
+                    SingleAttribute.SetAttribute_Wrapper(Telegram, "Failsafe_FDestinationAddress", FDestinationAddr.Value);
                 }
                 int i = 0;
                 foreach (Address currentAddress in Telegram.Addresses)
                 {
-                    Service.SetAttribute(currentAddress, "StartAddress", StartAddress[i]);
+                    SingleAttribute.SetAttribute_Wrapper(currentAddress, "StartAddress", StartAddress[i].Value);
                     i++;
                 }
             }
@@ -98,29 +124,47 @@ namespace TIAGroupCopyCLI.Models
         #endregion methods
     }
 
-    class ManageDrive : ManageDevice
+    class ManageDrive : ManageDevice , IManageDevice
     {
         #region Fields
         private readonly List<TelegramAndAttributes> AllTelegrams = new List<TelegramAndAttributes>();
+        public DeviceType DeviceType { get; } = DeviceType.Drive;
+        private DriveObject driveObject;
         #endregion Fields
 
         #region Constructors 
         public ManageDrive(Device aDevice) : base(aDevice)
         {
-            //AllDevices.Add(aDevice);
-            Save();
+            driveObject = Get_DriveObject(aDevice);
         }
-        public ManageDrive(IList<Device> aDevices) : base(aDevices[0])
-        {
-            //AllDevices.AddRange(aDevices);
-            Save();
-        }
+
         #endregion Constructors
 
         #region Methods
-        public new void Save()
+        public new void SaveConfig()
         {
-            SaveFDestAndIoAddresses();
+
+            foreach (Telegram currentTelegram in driveObject.Telegrams)
+            {
+                TelegramAndAttributes newTelegram = new TelegramAndAttributes(currentTelegram);
+                if (newTelegram != null)
+                {
+                    AllTelegrams.Add(newTelegram);
+                }
+
+            }
+            base.SaveConfig();
+        }
+
+
+        public new void RestoreConfig_WithAdjustments(string prefix, ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest)
+        {
+            foreach (TelegramAndAttributes currentTelegram in AllTelegrams)
+            {
+                currentTelegram.RestoreConfig_WithAdjustments(fDestOffset, lowerFDest, upperFDest);
+            }
+
+            base.RestoreConfig_WithAdjustments(prefix, pnDeviceNumberOffset, fSourceOffset, fDestOffset, lowerFDest, upperFDest);
         }
 
         public new void Restore()
@@ -131,9 +175,8 @@ namespace TIAGroupCopyCLI.Models
 
         public void SaveFDestAndIoAddresses()
         {
-            foreach(Device currentDrive in AllDevices)
-            {
-                DriveObject tempDrive = currentDrive.DeviceItems[1].GetService<DriveObjectContainer>().DriveObjects[0];
+
+                DriveObject tempDrive = Device.DeviceItems[1].GetService<DriveObjectContainer>().DriveObjects[0];
                 foreach (Telegram currentTelegram in tempDrive.Telegrams)
                 {
                     TelegramAndAttributes newTelegram = new TelegramAndAttributes(currentTelegram);
@@ -143,7 +186,7 @@ namespace TIAGroupCopyCLI.Models
                     }
                     
                 }
-            }
+
         }
 
         public void RestoreFDestAndIoAddresses()
@@ -151,7 +194,7 @@ namespace TIAGroupCopyCLI.Models
             foreach (TelegramAndAttributes currentTelegram in AllTelegrams)
             {
 
-                currentTelegram.RestoreFDestAndIoAddresses();
+                currentTelegram.Restore_FDestAndIoAddresses();
             }
         }
 
@@ -163,5 +206,23 @@ namespace TIAGroupCopyCLI.Models
             }
         }
         #endregion methods
+
+        public static DriveObject Get_DriveObject(Device device)
+        {
+            //PlcSoftware plcSoftware = null;
+            foreach (DeviceItem currentDeviceItem in device.DeviceItems)
+            {
+                DriveObjectContainer doContainer = currentDeviceItem.GetService<DriveObjectContainer>();
+                if (doContainer != null)
+                {
+                    if (doContainer.DriveObjects[0] is DriveObject drive)
+                    {
+                        return drive;
+                    }
+                }
+            }
+            return null;
+        }
+
     }
 }

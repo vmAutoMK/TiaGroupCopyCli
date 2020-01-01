@@ -43,13 +43,14 @@ namespace TIAGroupCopyCLI.Models
 
         public ManageNetworkPort(NetworkPort networkPort)
         {
-            NetworkPort = networkPort; 
+            NetworkPort = networkPort;
         }
 
         #endregion Constuctor
 
         #region Methods
-        public void Save()
+
+        public void SaveConfig()
         {
             if (NetworkPort != null)
             {
@@ -61,7 +62,7 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
-        public void Restore()
+        public void RestoreConfig()
         {
             if ((NetworkPort != null) && isConnected)
             {

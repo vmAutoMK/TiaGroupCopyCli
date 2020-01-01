@@ -30,6 +30,7 @@ namespace TIAGroupCopyCLI.Para
 
             int currentArgIdx = 0;
 
+            #region general check of arguments
             if ((aArgs == null) || (aArgs.Count() == 0) || (aArgs.Count() < 4))
             {
                 Program.Progress("Not enough parameters.");
@@ -42,7 +43,7 @@ namespace TIAGroupCopyCLI.Para
                 Description();
                 return;
             }
-
+            #endregion
 
             #region Argument ProjectPath
 
@@ -174,7 +175,8 @@ namespace TIAGroupCopyCLI.Para
             }
             #endregion
 
-            #region Agument FDestAddrOffset
+            #region Agument IDeviceIoAddressOffset
+            currentArgIdx++;
             if (aArgs.Count() > currentArgIdx)
             {
                 //currentArgIdx = 10;  //test exeception
@@ -184,7 +186,7 @@ namespace TIAGroupCopyCLI.Para
                 }
                 catch (Exception e)
                 {
-                    Program.FaultMessage("Parameters FDestAddrOffset = " + aArgs[currentArgIdx] + " could not be converted to a number. ", e);
+                    Program.FaultMessage("Parameters IDeviceIoAddressOffset = " + aArgs[currentArgIdx] + " could not be converted to a number. ", e);
                     Description();
                     return;
                 }

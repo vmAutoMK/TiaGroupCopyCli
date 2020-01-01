@@ -80,7 +80,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EvaluateParameters.cs" />
-    <Compile Include="Models\IDevice.cs" />
+    <Compile Include="Models\IManageDevice.cs" />
     <Compile Include="Models\ManageAttribute.cs" />
     <Compile Include="Models\ManageDevice.cs" />
     <Compile Include="Models\ManageDrive.cs" />

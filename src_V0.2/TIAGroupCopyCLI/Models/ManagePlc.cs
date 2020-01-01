@@ -36,49 +36,7 @@ using TIAHelper.Services;
 namespace TIAGroupCopyCLI.Models
 {
 
-    public class TransferAreaAndAttributes
-    {
-        #region Fileds
 
-        public AttributeValue PartnerStartAddress;
-        private readonly TransferArea TransferArea;
-        #endregion Fileds
-
-        #region Constructor
-        public TransferAreaAndAttributes(TransferArea aTransferArea)
-        {
-            TransferArea = aTransferArea;
-            if (aTransferArea != null)
-            {
-                PartnerStartAddress = Service.GetAttribute(aTransferArea.PartnerAddresses[0], "StartAddress");
-            }
-        }
-
-        #endregion Constructor
-
-        #region methods
-        public void SavePartnerStartAddress()
-        {
-            if (TransferArea != null)
-            {
-                PartnerStartAddress = Service.GetAttribute(TransferArea.PartnerAddresses[0], "StartAddress");
-            }
-
-        }
-
-        public void RestorePartnerStartAddress()
-        {
-            if (TransferArea != null)
-            {
-                if (PartnerStartAddress != null)
-                {
-                    Service.SetAttribute(TransferArea.PartnerAddresses[0], "StartAddress", PartnerStartAddress);
-                }
-            }
-
-        }
-        #endregion methods
-    }
 
     public class ConnectionProviderAndAttributes
     {
@@ -105,7 +63,7 @@ namespace TIAGroupCopyCLI.Models
         #endregion Constructor
 
         #region Methods
-        public void Save()
+        public void SaveConfig()
         {
             if (AxisHardwareConnection != null)
             {
@@ -117,14 +75,17 @@ namespace TIAGroupCopyCLI.Models
 
         }
 
-        public void Restore()
+        public void RestoreConfig()
         {
             if ((AxisHardwareConnection != null) && isConnected)
             {
-
+                try
+                {
                     AxisHardwareConnection.ActorInterface.Disconnect();
                     AxisHardwareConnection.ActorInterface.Connect(addressIn, addressOut, connectOption);
-
+                }
+                catch (EngineeringTargetInvocationException)
+                { }
             }
 
         }
@@ -132,81 +93,93 @@ namespace TIAGroupCopyCLI.Models
         #endregion Methods
     }
 
-    class ManagePlc : ManageDevice
+    class ManagePlc : ManageDevice , IManageDevice
     {
         #region Fileds  
+        public DeviceType DeviceType { get; } = DeviceType.Plc;
+        public PlcSoftware plcSoftware;
 
-
-        public AttributeAndDeviceItem LowerBoundForFDestinationAddresses_attribues;
-        public AttributeAndDeviceItem UpperBoundForFDestinationAddresses_attribues;
-
-        public Subnet originalSubnet;
-        public IoSystem originalIoSystem;
-        public IoSystem newIoSystem;
-
-        private readonly List<TransferAreaAndAttributes> AllIDevicePartnerIoAddrsses = new List<TransferAreaAndAttributes>();
+        public SingleAttribute LowerBoundForFDestinationAddresses_attribue;
+        public SingleAttribute UpperBoundForFDestinationAddresses_attribue;
+        public SingleAttribute CentralFSourceAddress_attribue;
+        
         private readonly List<ConnectionProviderAndAttributes> AllToConnections = new List<ConnectionProviderAndAttributes>();
-        AttributeAndDeviceItem CentralFSourceAddress_attribue;
 
-        PlcSoftware plcSoftware;
+
 
         #endregion Fileds
 
         #region Constructor
-
         public ManagePlc(Device aDevice) : base(aDevice)
         {
-            Save();
+            plcSoftware = Get_PlcSoftware(aDevice);
         }
-
-
-        public ManagePlc(IList<Device> aDevices) : base(aDevices[0])
-        {
-            Save();
-        }
-
         #endregion constructor
 
         #region Methods
-        public void ChangeIoSystemName(string aPrefix)
+
+
+        public new void SaveInTemplate()
         {
-            //get PLCs in sub folders - recursive
-
-
-            try
-            {
-                //FirstPnNetworkInterfaces[0].IoControllers[0].IoSystem.Name = aPrefix + FirstPnNetworkInterfaces[0].IoControllers[0].IoSystem.Name;
-            }
-            catch
-            {
-            }
+            CentralFSourceAddress_attribue = SingleAttribute.FindAndSaveFirstDeviceItemAtribute(Device, "Failsafe_CentralFSourceAddress");
+            LowerBoundForFDestinationAddresses_attribue = SingleAttribute.FindAndSaveFirstDeviceItemAtribute(Device, "Failsafe_LowerBoundForFDestinationAddresses");
+            UpperBoundForFDestinationAddresses_attribue = SingleAttribute.FindAndSaveFirstDeviceItemAtribute(Device, "Failsafe_UpperBoundForFDestinationAddresses");
         }
 
-        public new void Save()
+        public new void SaveConfig()
         {
+            CentralFSourceAddress_attribue = SingleAttribute.FindAndSaveFirstDeviceItemAtribute(Device, "Failsafe_CentralFSourceAddress");
+            LowerBoundForFDestinationAddresses_attribue = SingleAttribute.FindAndSaveFirstDeviceItemAtribute(Device, "Failsafe_LowerBoundForFDestinationAddresses");
+            UpperBoundForFDestinationAddresses_attribue = SingleAttribute.FindAndSaveFirstDeviceItemAtribute(Device, "Failsafe_UpperBoundForFDestinationAddresses");
 
-            Device currentDevice = AllDevices[0];
-            CentralFSourceAddress_attribue = Service.Get1ValueAndDeviceItemWithAttribute(currentDevice.DeviceItems, "Failsafe_CentralFSourceAddress");
-            LowerBoundForFDestinationAddresses_attribues = Service.Get1ValueAndDeviceItemWithAttribute(currentDevice.DeviceItems, "Failsafe_LowerBoundForFDestinationAddresses");
-            UpperBoundForFDestinationAddresses_attribues = Service.Get1ValueAndDeviceItemWithAttribute(currentDevice.DeviceItems, "Failsafe_UpperBoundForFDestinationAddresses");
-            //xFDestinationAddress_attribues = Service.GetValueAndDeviceItemsWithAttribute(currentDevice.DeviceItems, "Failsafe_FDestinationAddress");
+            Save_iDeviceParnerIoAdresses();
+            Save_ToConnections();
 
-            originalSubnet = FirstPnNetworkInterfaces[0].Nodes[0].ConnectedSubnet;
-            originalIoSystem = FirstPnNetworkInterfaces[0].IoConnectors[0].ConnectedToIoSystem;
+            base.SaveConfig();
+        }
 
-            //GetAll_I_DeviceParnerAdresses();
+        public (ulong, ulong) CopyFromTemplate(ManagePlc aTemplatePlc)
+        {
+            ulong lowerFDest = 0;
+            ulong upperFDest = 0;
 
-            plcSoftware = Service.GetPlcSoftware(currentDevice);
-            GetAllToConnections();
+            if (aTemplatePlc?.CentralFSourceAddress_attribue?.Value != null) CentralFSourceAddress_attribue.Value = aTemplatePlc.CentralFSourceAddress_attribue?.Value;
+            if (aTemplatePlc?.LowerBoundForFDestinationAddresses_attribue?.Value != null)
+            {
+                lowerFDest = (ulong)aTemplatePlc.LowerBoundForFDestinationAddresses_attribue.Value;
+                LowerBoundForFDestinationAddresses_attribue.Value = aTemplatePlc.LowerBoundForFDestinationAddresses_attribue.Value;
+            }
+            if (aTemplatePlc?.UpperBoundForFDestinationAddresses_attribue?.Value != null)
+            {
+                upperFDest = (ulong)aTemplatePlc.UpperBoundForFDestinationAddresses_attribue.Value;
+                UpperBoundForFDestinationAddresses_attribue.Value = aTemplatePlc.UpperBoundForFDestinationAddresses_attribue.Value;
+            }
+
+            base.CopyFromTemplate(aTemplatePlc);
+
+            return (lowerFDest, upperFDest);
+        }
+        public new void RestoreConfig_WithAdjustments(string prefix, ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest)
+        {
+            if (CentralFSourceAddress_attribue != null)
+            {
+                CentralFSourceAddress_attribue.RestoreWithOffset(fSourceOffset);
+                LowerBoundForFDestinationAddresses_attribue.RestoreWithOffset(fDestOffset);
+                UpperBoundForFDestinationAddresses_attribue.RestoreWithOffset(fDestOffset);
+            }
+
+            base.RestoreConfig_WithAdjustments(prefix, pnDeviceNumberOffset, fSourceOffset, fDestOffset, lowerFDest, upperFDest);
+
+
 
         }
 
         public new  void  Restore()
         {
 
-            CentralFSourceAddress_attribue.Restore();
-            LowerBoundForFDestinationAddresses_attribues.Restore();
-            UpperBoundForFDestinationAddresses_attribues.Restore();
+            CentralFSourceAddress_attribue?.Restore();
+            LowerBoundForFDestinationAddresses_attribue?.Restore();
+            UpperBoundForFDestinationAddresses_attribue?.Restore();
 
             //ulong lower = (ulong)LowerBoundForFDestinationAddresses_attribues.Value;
             //ulong upper = (ulong)UpperBoundForFDestinationAddresses_attribues.Value;
@@ -221,51 +194,51 @@ namespace TIAGroupCopyCLI.Models
             //    }
            // }
 
-            RestorePnDeviceNumber();
-            SetAllIDeviceParnerAdresses();
         }
 
-        public void GetAll_iDeviceParnerIoAdresses()
+        public void RestorePnDeviceNumberWithOffset(ulong aOffset, int aNetworkInterfaceNumber = 0)
+        {
+            NetworkInterfaces[aNetworkInterfaceNumber]?.RestorePnDeviceNumberWithOffset(aOffset);
+        }
+
+        public void ChangeIoSystemName(string aPrefix)
         {
             try
             {
-                GetAll_iDeviceParnerIoAdresses_Internal(); //this is not possible in V15.0
+                //FirstPnNetworkInterfaces[0].IoControllers[0].IoSystem.Name = aPrefix + FirstPnNetworkInterfaces[0].IoControllers[0].IoSystem.Name;
+            }
+            catch
+            {
+            }
+        }
+
+        public void Save_iDeviceParnerIoAdresses()
+        {
+            try
+            {
+                foreach (ManageNetworkInterface currentNetworkInterface in NetworkInterfaces)
+                {
+                    currentNetworkInterface.Save_iDeviceParnerIoAdresses(); //this is not possible in V15.0
+                }
             }
             catch (MissingMethodException)
             {
             }
         }
-
-        private void GetAll_iDeviceParnerIoAdresses_Internal()
+        public void Restore_iDeviceParnerAdresses(ulong aIDeviceOffsett = 0)
         {
-            foreach (TransferArea currentTransferArea in FirstPnNetworkInterfaces[0].TransferAreas)
+            foreach (ManageNetworkInterface currentNetworkInterface in NetworkInterfaces)
             {
-
-                if (currentTransferArea.PartnerAddresses.Count >= 0)
-                {
-                    TransferAreaAndAttributes newTransferArea = new TransferAreaAndAttributes(currentTransferArea);
-                    if (newTransferArea != null)
-                    {
-                        AllIDevicePartnerIoAddrsses.Add(newTransferArea);
-                    }
-                }
+                currentNetworkInterface.Restore_iDeviceParnerAdressesWithOffest(aIDeviceOffsett);
             }
-        }
 
-        public void SetAllIDeviceParnerAdresses()
-        {
-            foreach (TransferAreaAndAttributes item in AllIDevicePartnerIoAddrsses)
-            {
-                    item.RestorePartnerStartAddress();
-            }
         }
-
-        public void GetAllToConnections()
+        
+        public void Save_ToConnections()
         {
             foreach (TechnologicalInstanceDB currentTechnologicalInstanceDB in plcSoftware.TechnologicalObjectGroup.TechnologicalObjects)
             {
                 AxisHardwareConnectionProvider connectionProvider = currentTechnologicalInstanceDB.GetService<AxisHardwareConnectionProvider>();
-
 
                 if (connectionProvider != null)
                 {
@@ -278,134 +251,54 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
-        public void SetAllToConnections()
+        public void Restore_ToConnections()
         {
             foreach (ConnectionProviderAndAttributes item in AllToConnections)
             {
-                item.Restore();
+                item.RestoreConfig();
             }
         }
 
-        public void CopyFromTemplate(ManagePlc aTemplatePlc)
+
+
+
+        public IoSystem CreateNewIoSystem(Subnet aSubnet, string aPrefix, int aNetworkInterfaceNumber = 0)
         {
-            CentralFSourceAddress_attribue.Value = aTemplatePlc.CentralFSourceAddress_attribue?.Value;
-            LowerBoundForFDestinationAddresses_attribues.Value = aTemplatePlc.LowerBoundForFDestinationAddresses_attribues?.Value;
-            UpperBoundForFDestinationAddresses_attribues.Value = aTemplatePlc.UpperBoundForFDestinationAddresses_attribues?.Value;
-
-
-            for (int i = 0; i < aTemplatePlc.FDestinationAddress_attribues.Count; i++)
-            {
-                FDestinationAddress_attribues[i].Value = aTemplatePlc.FDestinationAddress_attribues[i]?.Value;
-            }
-
-            //AllIDevicePartnerAddrsses = aTemplatePlc.AllIDevicePartnerAddrsses.CopyTo;
-            for (int i = 0; i < aTemplatePlc.AllIDevicePartnerIoAddrsses.Count; i++)
-            {
-
-                AllIDevicePartnerIoAddrsses[i].PartnerStartAddress.Value = aTemplatePlc.AllIDevicePartnerIoAddrsses[i].PartnerStartAddress?.Value;
-            }
-
-            for (int i = 0; i < aTemplatePlc.PnDeviceNumberOfFirstPnNetworkInterfaces.Count; i++)
-            {
-                //AllIDevicePartnerAddrsses[i].PartnerStartAddress.Value = aTemplatePlc.AllIDevicePartnerAddrsses[i].PartnerStartAddress.Value;
-                if (PnDeviceNumberOfFirstPnNetworkInterfaces.Count < i)
-                {
-                    PnDeviceNumberOfFirstPnNetworkInterfaces.Add(new AttributeInfo());
-                }
-                if (PnDeviceNumberOfFirstPnNetworkInterfaces[i] == null)
-                {
-                    PnDeviceNumberOfFirstPnNetworkInterfaces[i] = new AttributeInfo()
-                    {
-                        Name = "PnDeviceNumber"
-                    };
-                }
-
-                PnDeviceNumberOfFirstPnNetworkInterfaces[i].Value = aTemplatePlc.PnDeviceNumberOfFirstPnNetworkInterfaces[i]?.Value;
-            }
-
+            IoSystem newIoSystem = NetworkInterfaces[aNetworkInterfaceNumber]?.CreateNewIoSystem(aSubnet, aPrefix);
+            return newIoSystem;
         }
-        public  void  AdjustFSettings(ulong FSourceOffset, ulong aFDestOffset)
+
+        public void ConnectToIoSystem(IoSystem aIoSystem, int aNetworkInterfaceNumber = 0, int aIoConnectorNumber = 0)
         {
-            ulong oldLower = (ulong)LowerBoundForFDestinationAddresses_attribues.Value;
-            ulong oldUpper = (ulong)UpperBoundForFDestinationAddresses_attribues.Value;
-
-            CentralFSourceAddress_attribue.AddToValue(FSourceOffset);
-            LowerBoundForFDestinationAddresses_attribues.AddToValue(aFDestOffset);
-            UpperBoundForFDestinationAddresses_attribues.AddToValue(aFDestOffset);
-
-            base.AdjustFDestinationAddress(aFDestOffset, oldLower, oldUpper);
-            //foreach (AttributeAndDeviceItem item in xFDestinationAddress_attribues)  //.Where(i => true)
-            //{
-            //   if (((ulong)item.Value >= oldUower) && ((ulong)item.Value <= oldLpper))
-            //    {
-            //        item.AddToValue(aFDestOffset);
-            //    }
-            //}
+            NetworkInterfaces[aNetworkInterfaceNumber]?.ConnectToIoSystem(aIoSystem, aIoConnectorNumber);
 
         }
 
-        public void AdjustPartnerIoAddresses(ulong aIDeviceOffsett)
-        {
-
-            foreach (TransferAreaAndAttributes item in AllIDevicePartnerIoAddrsses)  //.Where(i => true)
-            {
-                {
-                    item.PartnerStartAddress.AddToValue(aIDeviceOffsett);
-                }
-            }
-
-        }
-
-        public void CreateNewIoSystem(Subnet aSubnet, string aPrefix)
-        {
-            string IoSystemName = FirstPnNetworkInterfaces[0].IoControllers[0].IoSystem.Name;
-            FirstPnNetworkInterfaces[0].Nodes[0].DisconnectFromSubnet();
-            FirstPnNetworkInterfaces[0].Nodes[0].ConnectToSubnet(aSubnet);
-            newIoSystem = FirstPnNetworkInterfaces[0].IoControllers[0].CreateIoSystem(aPrefix + IoSystemName);
-                       
-        }
-
-        public void ConnectToMasterIoSystem(IoSystem aIoSystem)
-        {
-            if (aIoSystem != null )
-            {
-                FirstPnNetworkInterfaces[0].IoConnectors[0].ConnectToIoSystem(aIoSystem);
-            }
-        }
 
 
-        public void RestorePnDeviceNumber()
-        {
-            if ((FirstPnNetworkInterfaces[0].IoConnectors.Count > 0))
-            {
-                if ((PnDeviceNumberOfFirstPnNetworkInterfaces[0]?.Value ?? null) != null)
-                {
-                    FirstPnNetworkInterfaces[0].IoConnectors[0].SetAttribute(PnDeviceNumberOfFirstPnNetworkInterfaces[0].Name, PnDeviceNumberOfFirstPnNetworkInterfaces[0].Value);
-                }
-            }
-        }
 
-        public void AdjustPnDeviceNumberWithOffset(uint aOffset)
-        {
-            if ((FirstPnNetworkInterfaces[0].IoConnectors.Count > 0))
-            {
-                if ((PnDeviceNumberOfFirstPnNetworkInterfaces[0]?.Value ?? null) != null)
-                {
-                    PnDeviceNumberOfFirstPnNetworkInterfaces[0].AddToValue(aOffset);
-                }
-            }
-        }
-        public void DelecteOldSubnet()
-        {
-            try
-            {
-                originalSubnet.Delete();
-            }
-            catch (NullReferenceException)
-            { }
-        }
 
         #endregion methods
+
+
+        public static PlcSoftware Get_PlcSoftware(Device device)
+        {
+            //PlcSoftware plcSoftware = null;
+            foreach (DeviceItem currentDeviceItem in device.DeviceItems.Where(d => d.Classification.ToString() == "CPU"))
+            {
+                //hole Softwareblöcke, die PLC_1 untergeordnet sind
+                SoftwareContainer softwareContainer = currentDeviceItem.GetService<SoftwareContainer>();
+                if (softwareContainer != null)
+                {
+                    if (softwareContainer.Software is PlcSoftware plc)
+                    {
+                        return plc;
+                    }
+                }
+            }
+            return null;
+        }
+
     }
 
 }

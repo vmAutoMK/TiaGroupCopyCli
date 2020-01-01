@@ -1,26 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using Siemens.Engineering;
-using Siemens.Engineering.HW;
-using Siemens.Engineering.HW.Features;
-using Siemens.Engineering.SW;
-using Siemens.Engineering.SW.Blocks;
-using Siemens.Engineering.SW.ExternalSources;
-using Siemens.Engineering.SW.Tags;
-using Siemens.Engineering.SW.Types;
-using Siemens.Engineering.Hmi;
-using HmiTarget = Siemens.Engineering.Hmi.HmiTarget;
-using Siemens.Engineering.Hmi.Tag;
-using Siemens.Engineering.Hmi.Screen;
-using Siemens.Engineering.Hmi.Cycle;
-using Siemens.Engineering.Hmi.Communication;
-using Siemens.Engineering.Hmi.Globalization;
-using Siemens.Engineering.Hmi.TextGraphicList;
-using Siemens.Engineering.Hmi.RuntimeScripting;
-using Siemens.Engineering.Compiler;
-using Siemens.Engineering.Library;
-using Siemens.Engineering.MC.Drives;
-
 using System.IO;
 using System.Net;
 using System.Collections.Generic;
@@ -28,6 +7,8 @@ using System.Linq;
 using static System.Net.Mime.MediaTypeNames;
 using System.Diagnostics;
 
+using Siemens.Engineering;
+using Siemens.Engineering.HW;
 using Siemens.Engineering.Library.MasterCopies;
 
 using TiaOpennessHelper.Utils;
@@ -35,15 +16,11 @@ using TIAHelper.Services;
 using TIAGroupCopyCLI.Models;
 using TIAGroupCopyCLI.Para;
 
-
-
-//using System.Windows.Forms;
-//string pructverion2 = Application.ProductVersion;
-
 namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 {
     class Program
     {
+        #region Fileds
         const string TIAP_VERSION_USED_FOR_TESTING = "15.1";
         const string OPENESS_VERSION_USED_FOR_TESTING = "15.1.0.0";
 
@@ -51,6 +28,8 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
         private static TiaPortal tiaPortal;
         private static Project project;
+        #endregion
+
 
         static void Main(string[] args)
         {
@@ -94,6 +73,10 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
         //=================================================================================================
         private static void RunTiaPortal()
         {
+            string indexFormat = "D2";
+            uint groupCounter = 1;
+
+
             #region test: hardcode path
             /*
             Console.WriteLine("!!!with hardcoded project path for testing!!!");
@@ -115,16 +98,12 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             #endregion
 
             #region tia and project
+
             Progress("Check running TIA Portal");
             bool tiaStartedWithoutInterface = false;
 
-            Service.AttachToTIA(Parameters.ProjectPath, ref tiaPortal, ref project);
-                        
-            if ((tiaPortal == null) || (project == null))
-            {
-                Service.OpenProject(Parameters.ProjectPath, ref tiaPortal, ref project);
-                tiaStartedWithoutInterface = true;
-            }
+            Service.OpenProject(Parameters.ProjectPath, ref tiaPortal, ref project, ref tiaStartedWithoutInterface);
+
             if ((tiaPortal == null) || (project == null))
             {
                 CancelGeneration("Could not open project.");
@@ -132,16 +111,21 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             }
 
             Progress(String.Format("Project {0} is open", project.Path.FullName));
+            
             #endregion
 
             #region test models
-
-            
+            /*
             Console.WriteLine("!!! TESTING !!!");
             DeviceUserGroup testGroup = project.DeviceGroups.Find(Parameters.TemplateGroupName);
-            ManageDevice testPlcs = new ManageDevice(testGroup.Devices[0]);
-            testPlcs.Save();
 
+            ManageGroup tempateGroup = new ManageGroup(testGroup);
+
+            //ManageDevice testPlcs = new ManageDevice(testGroup.Devices[0]);
+            //testPlcs.Save();
+
+            Console.WriteLine("end test");
+            */
 
             /*
             ManagePlc testPlcs = new ManagePlc(testGroup);
@@ -161,8 +145,8 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             #region master copy
             Progress("Creating master copy.");
 
-            DeviceUserGroup templateGroup = project.DeviceGroups.Find(Parameters.TemplateGroupName);
-            if (templateGroup == null)
+            DeviceUserGroup tiaTemplateGroup = project.DeviceGroups.Find(Parameters.TemplateGroupName);
+            if (tiaTemplateGroup == null)
             {
                 CancelGeneration("Group not found.");
                 return;
@@ -174,7 +158,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             try
             {
 
-                templateCopy = project.ProjectLibrary.MasterCopyFolder.MasterCopies.Create(templateGroup);
+                templateCopy = project.ProjectLibrary.MasterCopyFolder.MasterCopies.Create(tiaTemplateGroup);
             }
             catch (Exception ex)
             {
@@ -192,47 +176,52 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             #endregion
 
             #region get basic info from template group
-            IList<Device> templatePlcDevices = Service.GetPlcDevicesInGroup(templateGroup);
-            ManagePlc templatePlcs = new ManagePlc(templatePlcDevices);
-            templatePlcs.GetAll_iDeviceParnerIoAdresses();
 
-            if (templatePlcs.AllDevices.Count != 1)
+            ManageGroup templateGroup = new ManageGroup(tiaTemplateGroup, Parameters.NewGroupNamePrefix, Parameters.Prefix, groupCounter, indexFormat);
+            if (templateGroup.Devices.Where(d => d.DeviceType == DeviceType.Plc).Count() != 1)
             {
                 CancelGeneration("No PLC or more than 1 PLC in group.");
                 return;
             }
 
+            templateGroup.SavePlcConfigInTemplate();
+            
+            
+
             #endregion
 
             #region change name and IP of first group (template Group)
-            string indexformat = "D2";
-            uint groupCounter = 1;
+
 
             Progress("Adjusting template group.");
-            string currentPrefix = Parameters.Prefix + groupCounter.ToString(indexformat);
-            //templateGroup.Name = templateGroup.Name + groupCounter.ToString(indexformat);
-            templateGroup.Name = Parameters.NewGroupNamePrefix + groupCounter.ToString(indexformat);
-            //templateNetworkInterface.IoControllers[0].IoSystem.Name = currentPrefix + temlateIoSystemName;
-
-            Service.ChangeDeviceNames(templateGroup, currentPrefix);
-            templatePlcs.ChangeIoSystemName(currentPrefix);
-
+            templateGroup.ChangeNames();
+           
             #endregion
 
+
             #region copy group loop
-            DeviceUserGroupComposition userGroups = project.DeviceGroups;
+            DeviceUserGroupComposition tiaUserGroups = project.DeviceGroups;
  
             while (++groupCounter <= Parameters.NumOfGroups)
             {
                 #region copy group
                 Progress("Creating Group " + groupCounter);
-                currentPrefix = Parameters.Prefix + groupCounter.ToString(indexformat);
+               // currentPrefix = Parameters.Prefix + groupCounter.ToString(indexFormat);
 
-                DeviceUserGroup newGroup;
+                DeviceUserGroup newTiaGroup;
+                ManageGroup newGroup;
                 try
                 {
-                    newGroup = userGroups.CreateFrom(templateCopy);
-
+                    newTiaGroup = tiaUserGroups.CreateFrom(templateCopy);
+                    if (newTiaGroup == null)
+                    {
+                        CancelGeneration("Could not create new Group");
+                        return;
+                    }
+                    else
+                    {
+                        newGroup = new ManageGroup(newTiaGroup, Parameters.NewGroupNamePrefix, Parameters.Prefix, groupCounter, indexFormat);
+                    }
                 }
                 catch(Exception e)
                 {
@@ -242,28 +231,21 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
                 #endregion
 
-                #region read in devices
-                //newGroup.Name = newGroup.Name + groupCounter.ToString(indexformat); ;
-                newGroup.Name = Parameters.NewGroupNamePrefix + groupCounter.ToString(indexformat); ;
-                Service.ChangeDeviceNames(newGroup, currentPrefix);
 
-                IList<Device> plcDevices = Service.GetPlcDevicesInGroup(newGroup);
-                ManagePlc plcs = new ManagePlc(plcDevices);
 
-                IList<Device> hmiDevices = Service.GetHmiDevicesInGroup(newGroup);
-                ManageHmi hmis = new ManageHmi(hmiDevices);
-
-                IList<Device> driveDevices = Service.GetG120DevicesInGroup(newGroup);
-                ManageDrive drives = new ManageDrive(driveDevices);
-
-                IList<Device> allDevices = Service.GetAllDevicesInGroup(newGroup);
-                IList<Device> tempIoDevices = allDevices.Except(hmis.AllDevices).Except(drives.AllDevices).ToList();
-                tempIoDevices.Remove(plcs.AllDevices[0]);
-                ManageIo ioDevices = new ManageIo(tempIoDevices);
-
-                #endregion
 
                 #region change settigns 
+                newGroup.SaveConfig();
+                newGroup.ChangeNames();
+                newGroup.ChangeIpAddresses(groupCounter - 1);
+                newGroup.CreateNewIoSystem(templateGroup.originalSubnet);
+                newGroup.ConnectPlcToMasterIoSystem(templateGroup.masterIoSystem);
+                newGroup.CopyFromTemplate(templateGroup);
+                newGroup.ReconnectAndRestore_WithAdjustments((groupCounter - 1), Parameters.FBaseAddrOffset * (groupCounter - 1), Parameters.FDestAddrOffset * (groupCounter - 1), (Parameters.IDeviceIoAddressOffset * (groupCounter - 1)));
+                newGroup.DelecteOldSubnet();
+                #endregion change settigns
+                /*
+                 
                 plcs.ChangeIpAddresse(groupCounter - 1);
                 plcs.CreateNewIoSystem(templatePlcs.originalSubnet, currentPrefix);
                 plcs.ConnectToMasterIoSystem(templatePlcs.originalIoSystem);
@@ -278,7 +260,8 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
                 ioDevices.ChangeIpAddresse(groupCounter - 1);
                 ioDevices.SwitchIoSystem(templatePlcs.originalSubnet, plcs.newIoSystem);
-                ioDevices.AdjustFDestinationAddress(Parameters.FDestAddrOffset * (groupCounter - 1), (ulong)templatePlcs.LowerBoundForFDestinationAddresses_attribues.Value, (ulong)templatePlcs.UpperBoundForFDestinationAddresses_attribues.Value);
+                if (templatePlcs.LowerBoundForFDestinationAddresses_attribues?.Value != null)
+                    ioDevices.AdjustFDestinationAddress(Parameters.FDestAddrOffset * (groupCounter - 1), (ulong)templatePlcs.LowerBoundForFDestinationAddresses_attribues.Value, (ulong)templatePlcs.UpperBoundForFDestinationAddresses_attribues.Value);
                 ioDevices.Restore();
                 ioDevices.ChangePnDeviceName(currentPrefix);
 
@@ -290,23 +273,28 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
                 drives.ChangeIpAddresse(groupCounter - 1);
                 drives.SwitchIoSystem(templatePlcs.originalSubnet, plcs.newIoSystem);
-                drives.AdjustFDestinationAddress(Parameters.FDestAddrOffset * (groupCounter - 1), (ulong)templatePlcs.LowerBoundForFDestinationAddresses_attribues.Value, (ulong)templatePlcs.UpperBoundForFDestinationAddresses_attribues.Value);
+                if (templatePlcs.LowerBoundForFDestinationAddresses_attribues?.Value != null)
+                    drives.AdjustFDestinationAddress(Parameters.FDestAddrOffset * (groupCounter - 1), (ulong)templatePlcs.LowerBoundForFDestinationAddresses_attribues.Value, (ulong)templatePlcs.UpperBoundForFDestinationAddresses_attribues.Value);
                 drives.Restore();
                 drives.ChangePnDeviceName(currentPrefix);
 
                 plcs.SetAllToConnections();
 
 
-                plcs.RestoreAllPartnerPorts();
-                hmis.RestoreAllPartnerPorts();
-                drives.RestoreAllPartnerPorts();
-                ioDevices.RestoreAllPartnerPorts();
+                //plcs.RestoreAllPartnerPorts();
+                //hmis.RestoreAllPartnerPorts();
+                //drives.RestoreAllPartnerPorts();
+                //ioDevices.RestoreAllPartnerPorts();
+
+                
 
                 #endregion
 
                 plcs.DelecteOldSubnet();
                 //deleteNetworkSubnet.Delete();
 
+                */
+                
             }
 
             #endregion

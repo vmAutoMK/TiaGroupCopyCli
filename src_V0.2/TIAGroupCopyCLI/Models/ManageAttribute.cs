@@ -32,35 +32,76 @@ using TIAGroupCopyCLI.Models;
 
 namespace TIAGroupCopyCLI.Models
 {
-
-
-    class SimpleAttribute
+    //=========================================================================================================
+    public class AttributeValue
     {
-        #region References to openness object
-        private IEngineeringObject EngineeringObject;
-        #endregion
 
-        #region Fileds
-        public string Name;
         public object Value;
 
-        #endregion
 
-        #region constructor
-
-        public SimpleAttribute(IEngineeringObject engineeringObject, string name, object value)
+        public AttributeValue()
         {
-            EngineeringObject = engineeringObject;
-            Name = name;
-            Value = value;
+        }
+        public AttributeValue(object aObject)
+        {
+            Value = aObject;
         }
 
-        #endregion constructor
 
-        #region methods
-
-        #region Access Value
         public object AddToValue(uint addToValue)
+        {
+            if (Value is ulong)
+            {
+                Value = (ulong)Value + (ulong)addToValue;
+            }
+            else if (Value is uint)
+            {
+                Value = (uint)Value + (uint)addToValue;
+            }
+            if (Value is int)
+            {
+                Value = (int)Value + (int)addToValue;
+            }
+
+            return Value;
+        }
+
+
+        public object AddToValue(int addToValue)
+        {
+            if (Value is ulong)
+            {
+                Value = (ulong)Value + (ulong)addToValue;
+            }
+            else if (Value is uint)
+            {
+                Value = (uint)Value + (uint)addToValue;
+            }
+            else if (Value is int)
+            {
+                Value = (int)Value + (int)addToValue;
+            }
+
+            return Value;
+        }
+        public object AddToValue(ulong addToValue)
+        {
+            if (Value is ulong)
+            {
+                Value = (ulong)Value + (ulong)addToValue;
+            }
+            else if (Value is uint)
+            {
+                Value = (uint)Value + (uint)addToValue;
+            }
+            if (Value is int)
+            {
+                Value = (int)Value + (int)addToValue;
+            }
+
+            return Value;
+        }
+        public object AddToValue(object addToValue)
         {
             if (Value is ulong)
             {
@@ -78,7 +119,207 @@ namespace TIAGroupCopyCLI.Models
             return Value;
         }
 
-        public object AddToValue(ulong addToValue)
+        public object AddToValueIfInBetween(object addToValue, object loverLinit, object UpperLimit)
+        {
+
+            if (Value is ulong)
+            {
+                if (((ulong)Value >= (ulong)loverLinit) && ((ulong)Value <= (ulong)UpperLimit))
+                    Value = (ulong)Value + (ulong)addToValue;
+            }
+            else if (Value is uint)
+            {
+                if (((uint)Value >= (uint)loverLinit) && ((uint)Value <= (uint)UpperLimit))
+                    Value = (uint)Value + (uint)addToValue;
+            }
+            else if (Value is int)
+            {
+                if (((int)Value >= (int)loverLinit) && ((int)Value <= (int)UpperLimit))
+                    Value = (int)Value + (int)addToValue;
+            }
+
+            return Value;
+        }
+        public int GetValueAsInt()
+        {
+            return (int)Value;
+        }
+
+
+
+        public static AttributeValue GetAttribute(IEngineeringObject aIEngineeringObject, string aAttributeName)
+        {
+            if (aIEngineeringObject != null)
+            {
+                try
+                {
+                    object attributeValue = aIEngineeringObject.GetAttribute(aAttributeName);
+                    AttributeValue newItem = new AttributeValue(attributeValue);
+                    //newItem.Value = attributeValue;
+                    return newItem;
+
+                }
+                catch (EngineeringNotSupportedException)
+                {
+
+                }
+                catch (Exception ex)
+                {
+                    Program.FaultMessage("Could not get Attribute", ex, "AttributeValue.GetAttribute");
+                }
+            }
+
+            return null;
+        }
+
+        public static List<AttributeValue> GetAttributes(IEngineeringComposition aIEngineeringComposition, string aAttributeName)
+        {
+            List<AttributeValue> returnItems = new List<AttributeValue>();
+
+            if (aIEngineeringComposition != null)
+            {
+                foreach (IEngineeringObject currentItem in aIEngineeringComposition)
+                {
+
+                    try
+                    {
+                        AttributeValue newItem = GetAttribute(currentItem, aAttributeName);
+                        if (newItem != null)
+                        {
+                            returnItems.Add(newItem);
+                        }
+                    }
+                    catch (EngineeringNotSupportedException)
+                    {
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.FaultMessage("Could not get Attribute", ex, "AttributeValue.GetAttributes");
+                    }
+                }
+            }
+            return returnItems;
+        }
+
+        public static bool SetAttribute(IEngineeringObject aIEngineeringObject, string aAttributeName, AttributeValue aAttributeValue)
+        {
+            if (aIEngineeringObject != null)
+            {
+                try
+                {
+                    aIEngineeringObject.SetAttribute(aAttributeName, aAttributeValue.Value);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Program.FaultMessage("Could not set Attribute", ex, "AttributeValue.SetAttribute");
+                }
+
+            }
+            return false;
+        }
+
+    }
+
+    //=========================================================================================================
+    public class TransferAreaAndAttributes
+    {
+        #region Fileds
+
+        public AttributeValue PartnerStartAddress;
+        private readonly TransferArea TransferArea;
+        #endregion Fileds
+
+        #region Constructor
+        public TransferAreaAndAttributes(TransferArea aTransferArea)
+        {
+            TransferArea = aTransferArea;
+            if (aTransferArea != null)
+            {
+                PartnerStartAddress = AttributeValue.GetAttribute(aTransferArea.PartnerAddresses[0], "StartAddress");
+            }
+        }
+        public TransferAreaAndAttributes(TransferArea aTransferArea, object aValue)
+        {
+            TransferArea = aTransferArea;
+            PartnerStartAddress = new AttributeValue()
+            {
+                Value = aValue
+            };
+        }
+
+        #endregion Constructor
+
+        #region methods
+        public void SavePartnerStartAddress()
+        {
+            if (TransferArea != null)
+            {
+
+                PartnerStartAddress = AttributeValue.GetAttribute(TransferArea.PartnerAddresses[0], "StartAddress");
+            }
+
+        }
+
+        public void RestorePartnerStartAddress()
+        {
+            if (TransferArea != null)
+            {
+                if (PartnerStartAddress != null)
+                {
+                    //Service.SetAttribute(TransferArea.PartnerAddresses[0], "StartAddress", PartnerStartAddress);
+                    SingleAttribute.SetAttribute_Wrapper(TransferArea.PartnerAddresses[0], "StartAddress", PartnerStartAddress?.Value);
+                }
+            }
+
+        }
+
+        public void RestorePartnerStartAddressWitOffset(ulong aIDeviceOffsett)
+        {
+            if (TransferArea != null)
+            {
+                if (PartnerStartAddress != null)
+                {
+                    SingleAttribute.SetAttribute_Wrapper(TransferArea.PartnerAddresses[0], "StartAddress", PartnerStartAddress.AddToValue(aIDeviceOffsett));
+                }
+            }
+
+        }
+        #endregion methods
+    }
+
+    //=========================================================================================================
+    class SingleAttribute : AttributeValue
+    {
+        #region References to openness object
+        private IEngineeringObject EngineeringObject;
+        #endregion
+
+        #region Fileds
+        public string Name;
+        //public object Value;
+
+        #endregion
+
+        #region constructor
+
+        public SingleAttribute(IEngineeringObject engineeringObject, string name, object value):base(value)
+        {
+            EngineeringObject = engineeringObject;
+            Name = name;
+            //Value = value;
+        }
+
+        #endregion constructor
+
+        #region methods
+
+
+
+        #region Access Value
+        /*
+        public object AddToValue(uint addToValue)
         {
             if (Value is ulong)
             {
@@ -113,8 +354,7 @@ namespace TIAGroupCopyCLI.Models
 
             return Value;
         }
-
-        public object AddToValue(object addToValue)
+        public object AddToValue(ulong addToValue)
         {
             if (Value is ulong)
             {
@@ -132,14 +372,23 @@ namespace TIAGroupCopyCLI.Models
             return Value;
         }
 
-        public bool AddToValueIfNameEquals(string name, object addToValue)
+
+        public object AddToValue(object addToValue)
         {
-            if (name == this.Name)
+            if (Value is ulong)
             {
-                AddToValue(addToValue);
-                return true;
+                Value = (ulong)Value + (ulong)addToValue;
             }
-            return false;
+            else if (Value is uint)
+            {
+                Value = (uint)Value + (uint)addToValue;
+            }
+            else if (Value is int)
+            {
+                Value = (int)Value + (int)addToValue;
+            }
+
+            return Value;
         }
 
         public object AddToValueIfInBetween(object addToValue, object loverLinit, object UpperLimit)
@@ -168,8 +417,22 @@ namespace TIAGroupCopyCLI.Models
         {
             return (int)Value;
         }
-
+        */
         #endregion
+
+
+
+        public bool AddToValueIfNameEquals(string name, object addToValue)
+        {
+            if (name == this.Name)
+            {
+                AddToValue(addToValue);
+                return true;
+            }
+            return false;
+        }
+
+
 
         #region Save/Restore
         public bool ReGetAttribute()
@@ -237,14 +500,28 @@ namespace TIAGroupCopyCLI.Models
 
         #region  static methods
 
-        public static SimpleAttribute GetSimpleAttributeObject(IEngineeringObject engineeringObject, string atrributeName)
+        public static SingleAttribute GetSimpleAttributeObject(IEngineeringObject engineeringObject, string attributeName)
         {
-            object attrinuteValue = GetAttribute_Wrapper(engineeringObject, atrributeName);
-            if (attrinuteValue != null)
+            object attributeValue = GetAttribute_Wrapper(engineeringObject, attributeName);
+            if (attributeValue != null)
             {
-                return new SimpleAttribute(engineeringObject, atrributeName, attrinuteValue);
+                return new SingleAttribute(engineeringObject, attributeName, attributeValue);
             }
             return null;
+        }
+
+        public static bool SetAttribute_Wrapper(IEngineeringObject engineeringObject, string attributeName, AttributeValue attributeValueObject)
+        {
+            try
+            {
+                engineeringObject.SetAttribute(attributeName, attributeValueObject.Value);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Program.FaultMessage("Could not set Attribute \"" + attributeName + "\" in engineeringObject.", ex);
+            }
+            return false;
         }
 
         public static bool SetAttribute_Wrapper(IEngineeringObject engineeringObject, string attributeName, object attributeValue)
@@ -280,6 +557,39 @@ namespace TIAGroupCopyCLI.Models
             }
             return null;
         }
+
+        #region FindAndSaveFirstDeviceItemAtribute
+        public static SingleAttribute FindAndSaveFirstDeviceItemAtribute(Device device, string attributeName)
+        {
+            foreach (DeviceItem currentDeviceItem in device.DeviceItems)
+            {
+                SingleAttribute found = FindAndSaveFirstDeviceItemAtribute(currentDeviceItem, attributeName);
+                if (found != null ) return found;
+            }
+
+            return null;
+        }
+
+        static SingleAttribute FindAndSaveFirstDeviceItemAtribute(DeviceItem deviceItem, string attributeName)
+        {
+            object attributeValue = SingleAttribute.GetAttribute_Wrapper(deviceItem, attributeName);
+            if (attributeValue != null)
+            {
+                return new SingleAttribute(deviceItem, attributeName, attributeValue);
+            }
+
+            foreach (DeviceItem currentDeviceItem in deviceItem.DeviceItems)
+            {
+                //call recursive
+                SingleAttribute found = FindAndSaveFirstDeviceItemAtribute(currentDeviceItem, attributeName);
+                if (found != null) return found;
+            }
+
+            return null;
+        }
+
+        #endregion DeviceItem Atribute
+
         #endregion
     }
 
@@ -288,7 +598,7 @@ namespace TIAGroupCopyCLI.Models
     {
 
         #region Fields
-        public List<SimpleAttribute> SavedAttributes = new List<SimpleAttribute>();
+        public List<SingleAttribute> SavedAttributes = new List<SingleAttribute>();
 
         public int Count
         {
@@ -301,7 +611,7 @@ namespace TIAGroupCopyCLI.Models
         #endregion Fields
 
         #region indexer
-        public SimpleAttribute this[int index]
+        public SingleAttribute this[int index]
         {
             get
             {
@@ -340,8 +650,7 @@ namespace TIAGroupCopyCLI.Models
         }
 
         #endregion Constructor
-
-
+        
         #region Enumerator
         // Implementation for the GetEnumerator method.
         IEnumerator IEnumerable.GetEnumerator()
@@ -356,21 +665,20 @@ namespace TIAGroupCopyCLI.Models
         #endregion
 
         #region methods
-
-
+        
         public bool AddEngineeringObjecAndAtributes(IEngineeringObject engineeringObject, string attributeName)
         {
-            object attributeValue = SimpleAttribute.GetAttribute_Wrapper(engineeringObject, attributeName);
+            object attributeValue = SingleAttribute.GetAttribute_Wrapper(engineeringObject, attributeName);
             if (attributeValue != null)
             {
-                SavedAttributes.Add(new SimpleAttribute(engineeringObject, attributeName, attributeValue));
+                SavedAttributes.Add(new SingleAttribute(engineeringObject, attributeName, attributeValue));
                 return true;
             }
 
             return false;
         }
 
-        public void AddAttribute(SimpleAttribute attribute)
+        public void AddAttribute(SingleAttribute attribute)
         {
             if (attribute != null)
             {
@@ -381,10 +689,10 @@ namespace TIAGroupCopyCLI.Models
 
         public bool GetAndAddAttribute(IEngineeringObject engineeringObject, string attributeName)
         {
-            object attributeValue = SimpleAttribute.GetAttribute_Wrapper(engineeringObject, attributeName);
+            object attributeValue = SingleAttribute.GetAttribute_Wrapper(engineeringObject, attributeName);
             if (attributeValue != null)
             {
-                SavedAttributes.Add(new SimpleAttribute(engineeringObject, attributeName, attributeValue));
+                SavedAttributes.Add(new SingleAttribute(engineeringObject, attributeName, attributeValue));
                 return true;
             }
             return false;
@@ -392,7 +700,7 @@ namespace TIAGroupCopyCLI.Models
 
         public void Restore()
         {
-            foreach (SimpleAttribute currentAttribute in SavedAttributes)
+            foreach (SingleAttribute currentAttribute in SavedAttributes)
             {
                 currentAttribute.Restore();
             }
@@ -400,7 +708,7 @@ namespace TIAGroupCopyCLI.Models
 
         public void RestoreWithPrefix(string prefix)
         {
-            foreach (SimpleAttribute currentAttribute in SavedAttributes)
+            foreach (SingleAttribute currentAttribute in SavedAttributes)
             {
                 currentAttribute.RestoreWithPrefix(prefix);
             }
@@ -408,7 +716,7 @@ namespace TIAGroupCopyCLI.Models
 
         public void RestoreWithSuffix(string suffix)
         {
-            foreach (SimpleAttribute currentAttribute in SavedAttributes)
+            foreach (SingleAttribute currentAttribute in SavedAttributes)
             {
                 currentAttribute.RestoreWithSuffix(suffix);
             }
@@ -416,7 +724,7 @@ namespace TIAGroupCopyCLI.Models
 
         public void RestoreWithOffset(object offset)
         {
-            foreach (SimpleAttribute currentAttribute in SavedAttributes)
+            foreach (SingleAttribute currentAttribute in SavedAttributes)
             {
                 currentAttribute.RestoreWithOffset(offset);
             }
@@ -428,26 +736,26 @@ namespace TIAGroupCopyCLI.Models
         {
             foreach (DeviceItem currentDeviceItem in device.DeviceItems)
             {
-                bool found = FindAndSaveDeviceItemAttributes(currentDeviceItem, attributeName, onlyFirstFind);
+                bool found = FindAndSaveAllDeviceItemAttributes(currentDeviceItem, attributeName, onlyFirstFind);
                 if (found && onlyFirstFind) return true;
             }
 
             return false;
         }
 
-        bool FindAndSaveDeviceItemAttributes(DeviceItem deviceItem, string attributeName, bool onlyFirstFind = false)
+        bool FindAndSaveAllDeviceItemAttributes(DeviceItem deviceItem, string attributeName, bool onlyFirstFind = false)
         {
-            object attributeValue = SimpleAttribute.GetAttribute_Wrapper(deviceItem, attributeName);
+            object attributeValue = SingleAttribute.GetAttribute_Wrapper(deviceItem, attributeName);
             if (attributeValue != null)
             {
-                SavedAttributes.Add(new SimpleAttribute(deviceItem, attributeName, attributeValue));
+                SavedAttributes.Add(new SingleAttribute(deviceItem, attributeName, attributeValue));
                 return true;
             }
 
             foreach (DeviceItem currentDeviceItem in deviceItem.DeviceItems)
             {
                 //call recursive
-                bool found = FindAndSaveDeviceItemAttributes(currentDeviceItem, attributeName, onlyFirstFind);
+                bool found = FindAndSaveAllDeviceItemAttributes(currentDeviceItem, attributeName, onlyFirstFind);
                 if (found && onlyFirstFind) return true;
             }
 
@@ -461,7 +769,7 @@ namespace TIAGroupCopyCLI.Models
         {
             foreach (DeviceItem currentDeviceItem in device.DeviceItems)
             {
-                bool found = FindAndSaveDeviceItemAttributes(currentDeviceItem, attributeName, onlyFirstFind);
+                bool found = FindAndSaveAllDeviceItemAttributes(currentDeviceItem, attributeName, onlyFirstFind);
                 if (found && onlyFirstFind) return true;
             }
 
@@ -472,10 +780,10 @@ namespace TIAGroupCopyCLI.Models
         {
             foreach (Address currentAddress in deviceItem.Addresses)
             {
-                object attributeValue = SimpleAttribute.GetAttribute_Wrapper(currentAddress, attributeName);
+                object attributeValue = SingleAttribute.GetAttribute_Wrapper(currentAddress, attributeName);
                 if (attributeValue != null)
                 {
-                    SavedAttributes.Add(new SimpleAttribute(currentAddress, attributeName, attributeValue));
+                    SavedAttributes.Add(new SingleAttribute(currentAddress, attributeName, attributeValue));
                     return true;
                 }
             }
@@ -493,22 +801,20 @@ namespace TIAGroupCopyCLI.Models
         #endregion  Address Atributes
 
         #endregion methods
-
-
+        
     }
 
-
-
+    
     //===============================================================================================
     class AttributeEnum : IEnumerator
     {
-        public List<SimpleAttribute> SavedAttributes;
+        public List<SingleAttribute> SavedAttributes;
 
         // Enumerators are positioned before the first element
         // until the first MoveNext() call.
         int position = -1;
 
-        public AttributeEnum(List<SimpleAttribute> savedAttributes)
+        public AttributeEnum(List<SingleAttribute> savedAttributes)
         {
             SavedAttributes = savedAttributes;
         }
@@ -532,7 +838,7 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
-        public SimpleAttribute Current
+        public SingleAttribute Current
         {
             get
             {
@@ -546,8 +852,6 @@ namespace TIAGroupCopyCLI.Models
                 }
             }
         }
-
-
 
     }
 
