@@ -62,12 +62,6 @@ namespace TIAGroupCopyCLI.Models
             base.RestoreConfig_WithAdjustments(prefix, pnDeviceNumberOffset, fSourceOffset, fDestOffset, lowerFDest, upperFDest);
         }
 
-        public new void Restore()
-        {
-            StartAddresses.Restore();
-            base.Restore();
-        }
-
         #endregion
 
     }

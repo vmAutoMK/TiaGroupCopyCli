@@ -42,10 +42,11 @@ namespace TIAGroupCopyCLI.Models
 
         ulong lowerFDest;
         ulong upperFDest;
-        #endregion Fields
 
         string currentPrefix;
         string currentgroupName;
+
+        #endregion Fields
 
         #region indexer
         public IManageDevice this[int index]
@@ -153,9 +154,8 @@ namespace TIAGroupCopyCLI.Models
             }
 
         }
-
-
-        public new void SaveConfig()
+        
+        public void SaveConfig()
         {
             foreach (IManageDevice currentdevice in Devices)
             {
@@ -165,7 +165,7 @@ namespace TIAGroupCopyCLI.Models
 
         }
 
-        public new void SavePlcConfigInTemplate()
+        public  void SavePlcConfigInTemplate()
         {
             foreach (ManagePlc currentPLC in Devices.Where(d => d.DeviceType == DeviceType.Plc))
             {
@@ -188,7 +188,8 @@ namespace TIAGroupCopyCLI.Models
                 i++;
             }
         }
-        public new void ReconnectAndRestore_WithAdjustments(ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong iDeviceOffset)
+
+        public void ReconnectAndRestore_WithAdjustments(ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong iDeviceOffset)
         {
             foreach (ManagePlc currentPLC in Devices.Where(d => d.DeviceType == DeviceType.Plc))
             {
@@ -242,6 +243,7 @@ namespace TIAGroupCopyCLI.Models
             }
             
         }
+
         public void CreateNewIoSystem(Subnet aSubnet)
         {
             newIoSystem = Plc?.CreateNewIoSystem(aSubnet, currentPrefix);
@@ -294,24 +296,7 @@ namespace TIAGroupCopyCLI.Models
 
             return DeviceType.ioDevice;
         }
-        public static List<Device> xGetAllDevicesInGroup(DeviceUserGroup aDeviceUserGroup)
-        {
-            List<Device> returnDevices = new List<Device>();
-            List<Device> addDevices;
 
-            if (aDeviceUserGroup != null)
-            {
-                returnDevices = aDeviceUserGroup.Devices.ToList();
-            }
-            //get PLCs in sub folders - recursive
-            foreach (DeviceUserGroup group in aDeviceUserGroup.Groups)
-            {
-                addDevices = xGetAllDevicesInGroup(group);
-                returnDevices.AddRange(addDevices);
-            }
-
-            return returnDevices;
-        }
         #endregion
 
     }
@@ -364,8 +349,6 @@ namespace TIAGroupCopyCLI.Models
                 }
             }
         }
-
-
 
     }
 

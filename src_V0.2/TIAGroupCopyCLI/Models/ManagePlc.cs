@@ -52,13 +52,7 @@ namespace TIAGroupCopyCLI.Models
         public ConnectionProviderAndAttributes(AxisHardwareConnectionProvider connectionProvider)
         {
             AxisHardwareConnection = connectionProvider;
-            if (AxisHardwareConnection != null)
-            {
-                addressIn = AxisHardwareConnection.ActorInterface.InputAddress;
-                addressOut = AxisHardwareConnection.ActorInterface.OutputAddress;
-                connectOption = AxisHardwareConnection.ActorInterface.ConnectOption;
-                isConnected = AxisHardwareConnection.ActorInterface.IsConnected;
-            }
+            SaveConfig();
         }
         #endregion Constructor
 
@@ -105,8 +99,6 @@ namespace TIAGroupCopyCLI.Models
         
         private readonly List<ConnectionProviderAndAttributes> AllToConnections = new List<ConnectionProviderAndAttributes>();
 
-
-
         #endregion Fileds
 
         #region Constructor
@@ -117,15 +109,7 @@ namespace TIAGroupCopyCLI.Models
         #endregion constructor
 
         #region Methods
-
-
-        public new void SaveInTemplate()
-        {
-            CentralFSourceAddress_attribue = SingleAttribute.FindAndSaveFirstDeviceItemAtribute(Device, "Failsafe_CentralFSourceAddress");
-            LowerBoundForFDestinationAddresses_attribue = SingleAttribute.FindAndSaveFirstDeviceItemAtribute(Device, "Failsafe_LowerBoundForFDestinationAddresses");
-            UpperBoundForFDestinationAddresses_attribue = SingleAttribute.FindAndSaveFirstDeviceItemAtribute(Device, "Failsafe_UpperBoundForFDestinationAddresses");
-        }
-
+        
         public new void SaveConfig()
         {
             CentralFSourceAddress_attribue = SingleAttribute.FindAndSaveFirstDeviceItemAtribute(Device, "Failsafe_CentralFSourceAddress");
@@ -159,6 +143,7 @@ namespace TIAGroupCopyCLI.Models
 
             return (lowerFDest, upperFDest);
         }
+
         public new void RestoreConfig_WithAdjustments(string prefix, ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest)
         {
             if (CentralFSourceAddress_attribue != null)
@@ -173,39 +158,15 @@ namespace TIAGroupCopyCLI.Models
 
 
         }
-
-        public new  void  Restore()
-        {
-
-            CentralFSourceAddress_attribue?.Restore();
-            LowerBoundForFDestinationAddresses_attribue?.Restore();
-            UpperBoundForFDestinationAddresses_attribue?.Restore();
-
-            //ulong lower = (ulong)LowerBoundForFDestinationAddresses_attribues.Value;
-            //ulong upper = (ulong)UpperBoundForFDestinationAddresses_attribues.Value;
-
-            base.Restore();
-
-            //foreach (AttributeAndDeviceItem item in xFDestinationAddress_attribues)  //.Where(i => true)
-            //{
-            //    if (((ulong)item.Value >= lower) && ((ulong)item.Value <= upper))
-            //    {
-             //       item.Restore();
-            //    }
-           // }
-
-        }
-
-        public void RestorePnDeviceNumberWithOffset(ulong aOffset, int aNetworkInterfaceNumber = 0)
-        {
-            NetworkInterfaces[aNetworkInterfaceNumber]?.RestorePnDeviceNumberWithOffset(aOffset);
-        }
-
+        
         public void ChangeIoSystemName(string aPrefix)
         {
             try
             {
-                //FirstPnNetworkInterfaces[0].IoControllers[0].IoSystem.Name = aPrefix + FirstPnNetworkInterfaces[0].IoControllers[0].IoSystem.Name;
+                if (NetworkInterfaces.Count>0)
+                {
+                    NetworkInterfaces[0].ChangeIoSystemName(aPrefix);
+                }
             }
             catch
             {
@@ -258,10 +219,7 @@ namespace TIAGroupCopyCLI.Models
                 item.RestoreConfig();
             }
         }
-
-
-
-
+                     
         public IoSystem CreateNewIoSystem(Subnet aSubnet, string aPrefix, int aNetworkInterfaceNumber = 0)
         {
             IoSystem newIoSystem = NetworkInterfaces[aNetworkInterfaceNumber]?.CreateNewIoSystem(aSubnet, aPrefix);
@@ -274,13 +232,9 @@ namespace TIAGroupCopyCLI.Models
 
         }
 
-
-
-
-
         #endregion methods
 
-
+        #region static methods
         public static PlcSoftware Get_PlcSoftware(Device device)
         {
             //PlcSoftware plcSoftware = null;
@@ -299,6 +253,7 @@ namespace TIAGroupCopyCLI.Models
             return null;
         }
 
+        #endregion
     }
 
 }

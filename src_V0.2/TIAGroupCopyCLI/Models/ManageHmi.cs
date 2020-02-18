@@ -48,7 +48,6 @@ namespace TIAGroupCopyCLI.Models
         }
 
 
-
         public static HmiTarget Get_HmiTarget(Device device)
         {
             //PlcSoftware plcSoftware = null;

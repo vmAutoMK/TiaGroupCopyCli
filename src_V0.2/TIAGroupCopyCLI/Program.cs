@@ -48,16 +48,23 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             Parameters = new Parameters(args);
             if (!Parameters.ParameterOK)
             {
+                Console.WriteLine("");
+                Console.WriteLine("Hit enter to exit.");
                 Console.ReadLine();
                 return;
             }
 
             if (!Heandlers.SelectAssmebly(Parameters.ProjectVersion, TIAP_VERSION_USED_FOR_TESTING, OPENESS_VERSION_USED_FOR_TESTING))
             {
+                Console.WriteLine("");
+                Console.WriteLine("Hit enter to exit.");
                 Console.ReadLine();
                 return;
             }
             Heandlers.AddAssemblyResolver();
+
+
+
 
             RunTiaPortal();
 
@@ -114,33 +121,6 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             
             #endregion
 
-            #region test models
-            /*
-            Console.WriteLine("!!! TESTING !!!");
-            DeviceUserGroup testGroup = project.DeviceGroups.Find(Parameters.TemplateGroupName);
-
-            ManageGroup tempateGroup = new ManageGroup(testGroup);
-
-            //ManageDevice testPlcs = new ManageDevice(testGroup.Devices[0]);
-            //testPlcs.Save();
-
-            Console.WriteLine("end test");
-            */
-
-            /*
-            ManagePlc testPlcs = new ManagePlc(testGroup);
-
-
-            NetworkPort testPlcPort = testPlcs.AllDevices[0].DeviceItems[1].DeviceItems[6].DeviceItems[0].GetService<NetworkPort>();
-            NetworkPort patnerPort =  testPlcPort.ConnectedPorts[0];
-
-            AttributeValue thisname = Service.GetAttribute(patnerPort, "Name");
-
-            testPlcPort.DisconnectFromPort(patnerPort);
-            testPlcPort.ConnectToPort(patnerPort);
-            */
-
-            #endregion
 
             #region master copy
             Progress("Creating master copy.");
@@ -215,7 +195,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
                     newTiaGroup = tiaUserGroups.CreateFrom(templateCopy);
                     if (newTiaGroup == null)
                     {
-                        CancelGeneration("Could not create new Group");
+                        CancelGeneration("Could not create new Group.");
                         return;
                     }
                     else
@@ -225,7 +205,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
                 }
                 catch(Exception e)
                 {
-                    CancelGeneration("Could not create new Group", e);
+                    CancelGeneration("Could not create new Group.", e);
                     return;
                 }
 
@@ -244,56 +224,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
                 newGroup.ReconnectAndRestore_WithAdjustments((groupCounter - 1), Parameters.FBaseAddrOffset * (groupCounter - 1), Parameters.FDestAddrOffset * (groupCounter - 1), (Parameters.IDeviceIoAddressOffset * (groupCounter - 1)));
                 newGroup.DelecteOldSubnet();
                 #endregion change settigns
-                /*
-                 
-                plcs.ChangeIpAddresse(groupCounter - 1);
-                plcs.CreateNewIoSystem(templatePlcs.originalSubnet, currentPrefix);
-                plcs.ConnectToMasterIoSystem(templatePlcs.originalIoSystem);
-                plcs.GetAll_iDeviceParnerIoAdresses();
-                plcs.CopyFromTemplate(templatePlcs);
-                plcs.AdjustFSettings(Parameters.FBaseAddrOffset * (groupCounter - 1), Parameters.FDestAddrOffset * (groupCounter - 1));
-                plcs.AdjustPnDeviceNumberWithOffset((groupCounter - 1));
-                plcs.AdjustPartnerIoAddresses(Parameters.IDeviceIoAddressOffset * (groupCounter - 1));
-                plcs.Restore();
-                plcs.ChangePnDeviceName(currentPrefix);
-                //plcs.SetAllIDeviceParnerAdresses();
 
-                ioDevices.ChangeIpAddresse(groupCounter - 1);
-                ioDevices.SwitchIoSystem(templatePlcs.originalSubnet, plcs.newIoSystem);
-                if (templatePlcs.LowerBoundForFDestinationAddresses_attribues?.Value != null)
-                    ioDevices.AdjustFDestinationAddress(Parameters.FDestAddrOffset * (groupCounter - 1), (ulong)templatePlcs.LowerBoundForFDestinationAddresses_attribues.Value, (ulong)templatePlcs.UpperBoundForFDestinationAddresses_attribues.Value);
-                ioDevices.Restore();
-                ioDevices.ChangePnDeviceName(currentPrefix);
-
-                hmis.ChangeIpAddresse(groupCounter - 1);
-                hmis.DisconnectFromSubnet();
-                hmis.ConnectToSubnet(templatePlcs.originalSubnet);
-                hmis.Restore();
-                hmis.ChangePnDeviceName(currentPrefix);
-
-                drives.ChangeIpAddresse(groupCounter - 1);
-                drives.SwitchIoSystem(templatePlcs.originalSubnet, plcs.newIoSystem);
-                if (templatePlcs.LowerBoundForFDestinationAddresses_attribues?.Value != null)
-                    drives.AdjustFDestinationAddress(Parameters.FDestAddrOffset * (groupCounter - 1), (ulong)templatePlcs.LowerBoundForFDestinationAddresses_attribues.Value, (ulong)templatePlcs.UpperBoundForFDestinationAddresses_attribues.Value);
-                drives.Restore();
-                drives.ChangePnDeviceName(currentPrefix);
-
-                plcs.SetAllToConnections();
-
-
-                //plcs.RestoreAllPartnerPorts();
-                //hmis.RestoreAllPartnerPorts();
-                //drives.RestoreAllPartnerPorts();
-                //ioDevices.RestoreAllPartnerPorts();
-
-                
-
-                #endregion
-
-                plcs.DelecteOldSubnet();
-                //deleteNetworkSubnet.Delete();
-
-                */
                 
             }
 
@@ -301,7 +232,6 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
             try
             {
-
                 deleteMasterCopy.Delete();
             }
             catch(Exception ex)

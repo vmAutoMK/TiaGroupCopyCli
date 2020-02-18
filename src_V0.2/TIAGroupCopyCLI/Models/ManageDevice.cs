@@ -78,15 +78,6 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
-        public virtual void Restore()
-        {
-            FDestinationAddress_attribues.Restore();
-            foreach (ManageNetworkInterface currentItem in NetworkInterfaces)
-            {
-                currentItem.Restore();
-            }
-        }
-
         public void CopyFromTemplate(ManageDevice atemplateDevice)
         {
 
@@ -99,21 +90,7 @@ namespace TIAGroupCopyCLI.Models
             {
                 NetworkInterfaces[i]?.CopyFromTemplate(atemplateDevice.NetworkInterfaces[i]);
 
-                /*
-                if (PnDeviceNumberOfFirstPnNetworkInterfaces.Count < i)
-                {
-                    PnDeviceNumberOfFirstPnNetworkInterfaces.Add(new AttributeInfo());
-                }
-                if (PnDeviceNumberOfFirstPnNetworkInterfaces[i] == null)
-                {
-                    PnDeviceNumberOfFirstPnNetworkInterfaces[i] = new AttributeInfo()
-                    {
-                        Name = "PnDeviceNumber"
-                    };
-                }
 
-                PnDeviceNumberOfFirstPnNetworkInterfaces[i].Value = aTemplatePlc.PnDeviceNumberOfFirstPnNetworkInterfaces[i]?.Value;
-                */
             }
         }
 
@@ -132,20 +109,7 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
-        public virtual void AdjustFDestinationAddress(ulong aFDestOffset, ulong aLower, ulong aUpper)
-        {
-
-            foreach (SingleAttribute item in FDestinationAddress_attribues)  //.Where(i => true)
-            {
-                if (((ulong)item.Value >= aLower) && ((ulong)item.Value <= aUpper))
-                {
-                    item.AddToValue(aFDestOffset);
-                }
-            }
-
-        }
-
-         public void ChangeTiaName(string aPrefix)
+        public void ChangeTiaName(string aPrefix)
         {
             try
             {
@@ -188,7 +152,6 @@ namespace TIAGroupCopyCLI.Models
             }
             return null;
         }
-
         public void Reconnect(Subnet subnet, IoSystem ioSystem)
         {
             if (NetworkInterfaces.Count > 0)
@@ -202,7 +165,6 @@ namespace TIAGroupCopyCLI.Models
             ConnectToSubnet(aSubnet);
             ConnectToIoSystem(aIoSystem);
         }
-
         public void DisconnectFromSubnet()
         {
             if (NetworkInterfaces.Count > 0)
@@ -210,7 +172,6 @@ namespace TIAGroupCopyCLI.Models
                 NetworkInterfaces[0].DisconnectFromSubnet();
             }
         }
-
         public void ConnectToSubnet(Subnet aSubnet)
         {
             if (NetworkInterfaces.Count > 0)
@@ -218,8 +179,6 @@ namespace TIAGroupCopyCLI.Models
                 NetworkInterfaces[0].ConnectToSubnet(aSubnet);
             }
         }
-
- 
         public void ConnectToIoSystem(IoSystem aIoSystem)
         {
             if (NetworkInterfaces.Count > 0)

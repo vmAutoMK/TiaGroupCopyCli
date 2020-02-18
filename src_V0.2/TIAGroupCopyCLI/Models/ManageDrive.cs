@@ -56,28 +56,6 @@ namespace TIAGroupCopyCLI.Models
         #endregion Constructor
 
         #region Methods
-        public void SaveFDestAndIoAddresses()
-        {
-            if (Telegram != null)
-            {
-                FDestinationAddr = AttributeValue.GetAttribute(Telegram, "Failsafe_FDestinationAddress");
-                StartAddress = AttributeValue.GetAttributes(Telegram.Addresses, "StartAddress");
-            }
-
-        }
-
-        public new void AdjustFDestinationAddress(ulong aOffset, ulong aLower, ulong aUpper)
-        {
-            if (FDestinationAddr != null)
-            {
-
-                if (((uint)FDestinationAddr.Value >= aLower) && ((uint)FDestinationAddr.Value <= aUpper))
-                {
-                    FDestinationAddr.AddToValue(aOffset);
-                }
-
-            }
-        }
 
         public void RestoreConfig_WithAdjustments(ulong aOffset, ulong aLower, ulong aUpper)
         {
@@ -102,26 +80,7 @@ namespace TIAGroupCopyCLI.Models
             }
 
         }
-
-        public void Restore_FDestAndIoAddresses()
-        {
-            if (Telegram != null)
-            {
-                if (FDestinationAddr != null)
-                {
-
-                    SingleAttribute.SetAttribute_Wrapper(Telegram, "Failsafe_FDestinationAddress", FDestinationAddr.Value);
-                }
-                int i = 0;
-                foreach (Address currentAddress in Telegram.Addresses)
-                {
-                    SingleAttribute.SetAttribute_Wrapper(currentAddress, "StartAddress", StartAddress[i].Value);
-                    i++;
-                }
-            }
-
-        }
-        #endregion methods
+        #endregion
     }
 
     class ManageDrive : ManageDevice , IManageDevice
@@ -155,8 +114,7 @@ namespace TIAGroupCopyCLI.Models
             }
             base.SaveConfig();
         }
-
-
+        
         public new void RestoreConfig_WithAdjustments(string prefix, ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest)
         {
             foreach (TelegramAndAttributes currentTelegram in AllTelegrams)
@@ -167,46 +125,9 @@ namespace TIAGroupCopyCLI.Models
             base.RestoreConfig_WithAdjustments(prefix, pnDeviceNumberOffset, fSourceOffset, fDestOffset, lowerFDest, upperFDest);
         }
 
-        public new void Restore()
-        {
-            RestoreFDestAndIoAddresses();
-            base.Restore();
-        }
-
-        public void SaveFDestAndIoAddresses()
-        {
-
-                DriveObject tempDrive = Device.DeviceItems[1].GetService<DriveObjectContainer>().DriveObjects[0];
-                foreach (Telegram currentTelegram in tempDrive.Telegrams)
-                {
-                    TelegramAndAttributes newTelegram = new TelegramAndAttributes(currentTelegram);
-                    if (newTelegram != null)
-                    {
-                        AllTelegrams.Add(newTelegram);
-                    }
-                    
-                }
-
-        }
-
-        public void RestoreFDestAndIoAddresses()
-        {
-            foreach (TelegramAndAttributes currentTelegram in AllTelegrams)
-            {
-
-                currentTelegram.Restore_FDestAndIoAddresses();
-            }
-        }
-
-        public new void AdjustFDestinationAddress(ulong aOffset, ulong aLower, ulong aUpper)
-        {
-            foreach (TelegramAndAttributes currentTelegram in AllTelegrams)
-            {
-                currentTelegram.AdjustFDestinationAddress(aOffset, aLower, aUpper);
-            }
-        }
         #endregion methods
 
+        #region static methods
         public static DriveObject Get_DriveObject(Device device)
         {
             //PlcSoftware plcSoftware = null;
@@ -224,5 +145,6 @@ namespace TIAGroupCopyCLI.Models
             return null;
         }
 
+        #endregion
     }
 }

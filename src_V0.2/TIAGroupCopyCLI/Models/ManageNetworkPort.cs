@@ -108,7 +108,6 @@ namespace TIAGroupCopyCLI.Models
 
             return returnManagePortObjects;
         }
-
         private static List<ManageNetworkPort> GetAll_ManageNetworkPortObjects(DeviceItem deviceItem)
         {
             List<ManageNetworkPort> returnManagePortObjects = new List<ManageNetworkPort>();

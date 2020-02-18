@@ -38,7 +38,7 @@ namespace TIAGroupCopyCLI.Models
 
         public object Value;
 
-
+        #region Constructor
         public AttributeValue()
         {
         }
@@ -46,8 +46,9 @@ namespace TIAGroupCopyCLI.Models
         {
             Value = aObject;
         }
+        #endregion
 
-
+        #region add methods
         public object AddToValue(uint addToValue)
         {
             if (Value is ulong)
@@ -65,8 +66,6 @@ namespace TIAGroupCopyCLI.Models
 
             return Value;
         }
-
-
         public object AddToValue(int addToValue)
         {
             if (Value is ulong)
@@ -118,7 +117,6 @@ namespace TIAGroupCopyCLI.Models
 
             return Value;
         }
-
         public object AddToValueIfInBetween(object addToValue, object loverLinit, object UpperLimit)
         {
 
@@ -144,9 +142,9 @@ namespace TIAGroupCopyCLI.Models
         {
             return (int)Value;
         }
+        #endregion
 
-
-
+        #region static methods
         public static AttributeValue GetAttribute(IEngineeringObject aIEngineeringObject, string aAttributeName)
         {
             if (aIEngineeringObject != null)
@@ -219,6 +217,8 @@ namespace TIAGroupCopyCLI.Models
             }
             return false;
         }
+
+        #endregion
 
     }
 
@@ -315,113 +315,6 @@ namespace TIAGroupCopyCLI.Models
 
         #region methods
 
-
-
-        #region Access Value
-        /*
-        public object AddToValue(uint addToValue)
-        {
-            if (Value is ulong)
-            {
-                Value = (ulong)Value + (ulong)addToValue;
-            }
-            else if (Value is uint)
-            {
-                Value = (uint)Value + (uint)addToValue;
-            }
-            else if (Value is int)
-            {
-                Value = (int)Value + (int)addToValue;
-            }
-
-            return Value;
-        }
-
-        public object AddToValue(int addToValue)
-        {
-            if (Value is ulong)
-            {
-                Value = (ulong)Value + (ulong)addToValue;
-            }
-            else if (Value is uint)
-            {
-                Value = (uint)Value + (uint)addToValue;
-            }
-            else if (Value is int)
-            {
-                Value = (int)Value + (int)addToValue;
-            }
-
-            return Value;
-        }
-        public object AddToValue(ulong addToValue)
-        {
-            if (Value is ulong)
-            {
-                Value = (ulong)Value + (ulong)addToValue;
-            }
-            else if (Value is uint)
-            {
-                Value = (uint)Value + (uint)addToValue;
-            }
-            else if (Value is int)
-            {
-                Value = (int)Value + (int)addToValue;
-            }
-
-            return Value;
-        }
-
-
-        public object AddToValue(object addToValue)
-        {
-            if (Value is ulong)
-            {
-                Value = (ulong)Value + (ulong)addToValue;
-            }
-            else if (Value is uint)
-            {
-                Value = (uint)Value + (uint)addToValue;
-            }
-            else if (Value is int)
-            {
-                Value = (int)Value + (int)addToValue;
-            }
-
-            return Value;
-        }
-
-        public object AddToValueIfInBetween(object addToValue, object loverLinit, object UpperLimit)
-        {
-
-            if (Value is ulong)
-            {
-                if (((ulong)Value >= (ulong)loverLinit) && ((ulong)Value <= (ulong)UpperLimit))
-                    Value = (ulong)Value + (ulong)addToValue;
-            }
-            else if (Value is uint)
-            {
-                if (((uint)Value >= (uint)loverLinit) && ((uint)Value <= (uint)UpperLimit))
-                    Value = (uint)Value + (uint)addToValue;
-            }
-            else if (Value is int)
-            {
-                if (((int)Value >= (int)loverLinit) && ((int)Value <= (int)UpperLimit))
-                    Value = (int)Value + (int)addToValue;
-            }
-
-            return Value;
-        }
-
-        public int ValueAsInt()
-        {
-            return (int)Value;
-        }
-        */
-        #endregion
-
-
-
         public bool AddToValueIfNameEquals(string name, object addToValue)
         {
             if (name == this.Name)
@@ -431,8 +324,6 @@ namespace TIAGroupCopyCLI.Models
             }
             return false;
         }
-
-
 
         #region Save/Restore
         public bool ReGetAttribute()
@@ -451,7 +342,6 @@ namespace TIAGroupCopyCLI.Models
                 SetAttribute_Wrapper(EngineeringObject, Name, Value);
             }
         }
-
         public void RestoreWithPrefix(string prefix)
         {
             if ((Value != null) && (EngineeringObject != null))
@@ -459,7 +349,6 @@ namespace TIAGroupCopyCLI.Models
                 SetAttribute_Wrapper(EngineeringObject, Name, prefix + Value);
             }
         }
-
         public void RestoreWithSuffix(string suffix)
         {
             if ((Value != null) && (EngineeringObject != null))
@@ -467,7 +356,6 @@ namespace TIAGroupCopyCLI.Models
                 SetAttribute_Wrapper(EngineeringObject, Name, Value + suffix);
             }
         }
-
         public void RestoreWithOffset(object offset)
         {
             if ((Value != null) && (EngineeringObject != null))

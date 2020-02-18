@@ -46,7 +46,6 @@ namespace TIAGroupCopyCLI.Models
         #endregion Fileds
 
         #region Constructor
-        //constructor will discover all the 
         public ManageNetworkInterface(DeviceItem deviceItem, NetworkInterface networkInterface = null)
         {
             DeviceItem = deviceItem;
@@ -200,7 +199,20 @@ namespace TIAGroupCopyCLI.Models
         }
 
         #region Networking 
-
+        public void ChangeIoSystemName(string aPrefix, int IoControllerNumber = 0)
+        {
+            if (NetworkInterface?.IoControllers?.Count() > IoControllerNumber)
+            {
+                try
+                {
+                    NetworkInterface.IoControllers[IoControllerNumber].IoSystem.Name = aPrefix + NetworkInterface.IoControllers[IoControllerNumber].IoSystem.Name; 
+                }
+                catch
+                {
+                }
+            }
+            
+        }
         public Subnet Get_Subnet(int nodeNumber = 0)
         {
 

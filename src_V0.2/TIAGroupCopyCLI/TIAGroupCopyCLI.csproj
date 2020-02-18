@@ -23,8 +23,8 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>10</ApplicationRevision>
-    <ApplicationVersion>0.2.0.%2a</ApplicationVersion>
+    <ApplicationRevision>11</ApplicationRevision>
+    <ApplicationVersion>0.2.1.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -94,7 +94,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resolver.cs" />
     <Compile Include="Services.cs" />
-    <Compile Include="Types\Types.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -115,7 +114,9 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Types\" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="..\..\TIA_samples\cl parameters.txt">
       <Link>Extras\cl parameters.txt</Link>
