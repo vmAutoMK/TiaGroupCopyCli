@@ -44,7 +44,8 @@ namespace TIAGroupCopyCLI.Models
         ulong upperFDest;
 
         string currentPrefix;
-        string currentgroupName;
+        string currentGroupName;
+        string orignalGroupName;
 
         #endregion Fields
 
@@ -88,8 +89,9 @@ namespace TIAGroupCopyCLI.Models
             tiaGroup = deviceUserGroup;
             GetAll_DevicesInGroup(tiaGroup);
 
+            orignalGroupName = tiaGroup.Name;
             currentPrefix = prefix + groupCounter.ToString(indexFormat);
-            currentgroupName = newGroupName + groupCounter.ToString(indexFormat);
+            currentGroupName = newGroupName + groupCounter.ToString(indexFormat);
         }
 
         #endregion Constructor
@@ -160,8 +162,10 @@ namespace TIAGroupCopyCLI.Models
             foreach (IManageDevice currentdevice in Devices)
             {
                 currentdevice.SaveConfig();
+
             }
-            originalSubnet = Plc.Get_Subnet();
+            originalSubnet = Plc?.Get_Subnet();
+            masterIoSystem = Plc?.Get_ioSystem();
 
         }
 
@@ -207,21 +211,29 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
+        public void StripGroupNumAndPrefix(bool groupNameIsStartGroup, string GroupPrefix)
+        {
+            if (groupNameIsStartGroup)
+            {
+                currentGroupName = GroupPrefix;
+                tiaGroup.Name = currentGroupName;
+            }
+
+
+        }
+
         public void ChangeNames()
         {
 
-            tiaGroup.Name = currentgroupName;
+            tiaGroup.Name = currentGroupName;
             //templateNetworkInterface.IoControllers[0].IoSystem.Name = currentPrefix + temlateIoSystemName;
-            foreach (ManagePlc currentPLC in Devices.Where(d => d.DeviceType == DeviceType.Plc))
+
+            Plc?.AddPrefixToIoSystemName(currentPrefix);
+
+            foreach (IManageDevice currentDevice in Devices)
             {
-                currentPLC.ChangeTiaName(currentPrefix);
-                currentPLC.ChangeIoSystemName(currentPrefix);
-                currentPLC.ChangePnDeviceName(currentPrefix);
-            }
-            foreach (IManageDevice currentDevice in Devices.Where(d => d.DeviceType != DeviceType.Plc))
-            {
-                currentDevice.ChangeTiaName(currentPrefix);
-                currentDevice.ChangePnDeviceName(currentPrefix);
+                currentDevice.AddPrefixToTiaName(currentPrefix);
+                currentDevice.AddPrefixToPnDeviceName(currentPrefix);
             }
 
         }
@@ -230,7 +242,7 @@ namespace TIAGroupCopyCLI.Models
         {
             foreach (IManageDevice currentDevice in Devices)
             {
-                currentDevice.ChangeIpAddresse(aIpOffset);
+                currentDevice.AddOffsetToIpAddresse(aIpOffset);
             }
         }
 

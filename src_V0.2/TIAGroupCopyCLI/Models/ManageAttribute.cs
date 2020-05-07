@@ -202,7 +202,7 @@ namespace TIAGroupCopyCLI.Models
 
         public static bool SetAttribute(IEngineeringObject aIEngineeringObject, string aAttributeName, AttributeValue aAttributeValue)
         {
-            if (aIEngineeringObject != null)
+            if ((aIEngineeringObject != null) && (aAttributeValue != null) )
             {
                 try
                 {
@@ -211,7 +211,7 @@ namespace TIAGroupCopyCLI.Models
                 }
                 catch (Exception ex)
                 {
-                    Program.FaultMessage("Could not set Attribute", ex, "AttributeValue.SetAttribute");
+                    Program.FaultMessage("Could not set Attribute.", ex, "AttributeValue.SetAttribute");
                 }
 
             }

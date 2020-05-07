@@ -109,7 +109,17 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
-        public void ChangeTiaName(string aPrefix)
+        public void StripPrefixFromTiaName(string aPrefix)
+        {
+            try
+            {
+                Device.DeviceItems[1].Name = aPrefix + Device.DeviceItems[1].Name;
+            }
+            catch
+            {
+            }
+        }
+        public void AddPrefixToTiaName(string aPrefix)
         {
             try
             {
@@ -120,17 +130,17 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
-        public void ChangePnDeviceName(string aPrefix)
+        public void AddPrefixToPnDeviceName(string aPrefix)
         {
             if (NetworkInterfaces.Count > 0)
-                NetworkInterfaces[0].ChangePnDeviceName(aPrefix);
+                NetworkInterfaces[0].AddPrefixToPnDeviceName(aPrefix);
         }
 
-        public void ChangeIpAddresse(ulong aIpOffset)
+        public void AddOffsetToIpAddresse(ulong aIpOffset)
         {
             if (NetworkInterfaces.Count > 0)
             {
-                    NetworkInterfaces[0].ChangeIpAddress(aIpOffset);
+                    NetworkInterfaces[0].AddOffsetToIpAddress(aIpOffset);
             }
         }
 

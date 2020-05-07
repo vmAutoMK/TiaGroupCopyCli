@@ -15,8 +15,11 @@ namespace TIAGroupCopyCLI.Para
         public string ProjectVersion;
         public string TemplateGroupName;
         public string NewGroupNamePrefix;
+        public bool GroupNameIsStartGroup;
+        public uint StartGroupNum = 0;
         public string Prefix = "";
         public uint NumOfGroups = 0;
+        public string IndexFormat = "D2";
         public uint FBaseAddrOffset = 0;
         public uint FDestAddrOffset = 0;
         //public uint IDeviceDeviceNumberOffset = 0;
@@ -31,7 +34,7 @@ namespace TIAGroupCopyCLI.Para
             int currentArgIdx = 0;
 
             #region general check of arguments
-            if ((aArgs == null) || (aArgs.Count() == 0) || (aArgs.Count() < 4))
+            if ((aArgs == null) || (aArgs.Length == 0) || (aArgs.Length < 4))
             {
                 Program.Progress("Not enough parameters.");
                 Description();
@@ -100,12 +103,36 @@ namespace TIAGroupCopyCLI.Para
 
             #region Argument GroupNamePrefix
             currentArgIdx++;
-            NewGroupNamePrefix = aArgs[currentArgIdx];
-            TemplateGroupName = NewGroupNamePrefix;
+            
+            string argGroupName = aArgs[currentArgIdx];
+            uint factor = 1;
+            uint numberCount = 0;
 
-            while (TemplateGroupName[TemplateGroupName.Length - 1].Equals(' '))
+            while ( (argGroupName.Length > 0 ) && Char.IsDigit(argGroupName,argGroupName.Length - 1) )
             {
-                TemplateGroupName = TemplateGroupName.Substring(0, TemplateGroupName.Length - 1);
+                GroupNameIsStartGroup = true;
+                StartGroupNum = StartGroupNum + factor * ((uint)argGroupName[argGroupName.Length - 1] - 48 );
+                argGroupName = argGroupName.Substring(0, argGroupName.Length - 1);
+                factor *= 10;
+                numberCount += 1;
+            }
+            if (GroupNameIsStartGroup)
+            {
+                
+                TemplateGroupName = aArgs[currentArgIdx];
+                NewGroupNamePrefix = argGroupName;
+                IndexFormat = 'D' + numberCount.ToString("D1");
+            }
+            else
+            {
+                StartGroupNum = 1;
+                NewGroupNamePrefix = aArgs[currentArgIdx];
+                TemplateGroupName = NewGroupNamePrefix;
+
+                while (TemplateGroupName[TemplateGroupName.Length - 1].Equals(' '))
+                {
+                    TemplateGroupName = TemplateGroupName.Substring(0, TemplateGroupName.Length - 1);
+                }
             }
             #endregion
 
@@ -118,7 +145,13 @@ namespace TIAGroupCopyCLI.Para
             currentArgIdx++;
             try
             {
-                NumOfGroups = UInt32.Parse(aArgs[currentArgIdx]);
+                NumOfGroups = uint.Parse(aArgs[currentArgIdx]);
+                uint endGroupNum = StartGroupNum + NumOfGroups - 1;
+                if (!GroupNameIsStartGroup)
+                {
+                    IndexFormat = 'D' + ((uint)endGroupNum.ToString().Count()).ToString("D1");
+                }
+
             }
             catch (Exception e)
             {
@@ -143,7 +176,7 @@ namespace TIAGroupCopyCLI.Para
 
             #region Agument FBaseAddrOffset
             currentArgIdx++;
-            if (aArgs.Count() > currentArgIdx)
+            if (aArgs.Length > currentArgIdx)
             {
                 try
                 {
@@ -160,7 +193,7 @@ namespace TIAGroupCopyCLI.Para
 
             #region Agument FDestAddrOffset
             currentArgIdx++;
-            if (aArgs.Count() > currentArgIdx)
+            if (aArgs.Length > currentArgIdx)
             {
                 try
                 {
@@ -177,7 +210,7 @@ namespace TIAGroupCopyCLI.Para
 
             #region Agument IDeviceIoAddressOffset
             currentArgIdx++;
-            if (aArgs.Count() > currentArgIdx)
+            if (aArgs.Length > currentArgIdx)
             {
                 //currentArgIdx = 10;  //test exeception
                 try
@@ -213,7 +246,7 @@ namespace TIAGroupCopyCLI.Para
             Program.Progress("                           (e.g. Group_ ");
             Program.Progress("3. Prefix                = Text to be added in fron of device name");
             Program.Progress("                           (e.g. AGV, so _plc will become AGV01_plc");
-            Program.Progress("4. NumberOfGroups        = how many groups do you want to end up with");
+            Program.Progress("4. NumberOfGroups to add = how many groups do you want to end up with");
             Program.Progress("                           including the template group");
             Program.Progress("5. FBaseAddrOffset       = by what increment should the central FBaseAddr");
             Program.Progress("                           of the PLC be increamented");
@@ -242,7 +275,7 @@ namespace TIAGroupCopyCLI.Para
             Program.Progress("Project Version       = " + ProjectVersion);
             Program.Progress("GroupName             = " + TemplateGroupName);
             Program.Progress("Prefix                = " + Prefix);
-            Program.Progress("NumberOfGroups        = " + NumOfGroups);
+            Program.Progress("NumberOfGroups to add = " + NumOfGroups);
             Program.Progress("FBaseAddrOffset       = " + FBaseAddrOffset);
             Program.Progress("FDestAddrOffset       = " + FDestAddrOffset);
             Program.Progress("IDeviceIoAddrOffset   = " + IDeviceIoAddressOffset);

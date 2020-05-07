@@ -80,8 +80,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
         //=================================================================================================
         private static void RunTiaPortal()
         {
-            string indexFormat = "D2";
-            uint groupCounter = 1;
+            uint groupCounter = Parameters.StartGroupNum;
 
 
             #region test: hardcode path
@@ -122,8 +121,8 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             #endregion
 
 
-            #region master copy
-            Progress("Creating master copy.");
+            #region get template group
+            Progress("Searching for template group.");
 
             DeviceUserGroup tiaTemplateGroup = project.DeviceGroups.Find(Parameters.TemplateGroupName);
             if (tiaTemplateGroup == null)
@@ -131,6 +130,19 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
                 CancelGeneration("Group not found.");
                 return;
             }
+
+            ManageGroup templateGroup = new ManageGroup(tiaTemplateGroup, Parameters.NewGroupNamePrefix, Parameters.Prefix, groupCounter, Parameters.IndexFormat);
+            if (templateGroup.Devices.Where(d => d.DeviceType == DeviceType.Plc).Count() != 1)
+            {
+                CancelGeneration("No PLC or more than 1 PLC in group.");
+                return;
+            }
+            //templateGroup.SavePlcConfigInTemplate();
+            templateGroup.SaveConfig();
+
+
+
+
 
             //=======copy to master copy========
             //MasterCopyComposition masterCopies = project.ProjectLibrary.MasterCopyFolder.MasterCopies;
@@ -157,14 +169,9 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
             #region get basic info from template group
 
-            ManageGroup templateGroup = new ManageGroup(tiaTemplateGroup, Parameters.NewGroupNamePrefix, Parameters.Prefix, groupCounter, indexFormat);
-            if (templateGroup.Devices.Where(d => d.DeviceType == DeviceType.Plc).Count() != 1)
-            {
-                CancelGeneration("No PLC or more than 1 PLC in group.");
-                return;
-            }
 
-            templateGroup.SavePlcConfigInTemplate();
+
+            //templateGroup.SavePlcConfigInTemplate();
             
             
 
@@ -200,7 +207,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
                     }
                     else
                     {
-                        newGroup = new ManageGroup(newTiaGroup, Parameters.NewGroupNamePrefix, Parameters.Prefix, groupCounter, indexFormat);
+                        newGroup = new ManageGroup(newTiaGroup, Parameters.NewGroupNamePrefix, Parameters.Prefix, groupCounter, Parameters.IndexFormat);
                     }
                 }
                 catch(Exception e)

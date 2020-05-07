@@ -59,11 +59,11 @@ namespace TIAGroupCopyCLI.Models
 
         void RestoreConfig_WithAdjustments(string prefix, ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest);
 
-        void ChangeTiaName(string aPrefix);
+        void AddPrefixToTiaName(string aPrefix);
 
-        void ChangePnDeviceName(string aPrefix);
+        void AddPrefixToPnDeviceName(string aPrefix);
 
-        void ChangeIpAddresse(ulong aIpOffset);
+        void AddOffsetToIpAddresse(ulong aIpOffset);
 
         void Reconnect(Subnet aSubnet, IoSystem aIoSystem);
 

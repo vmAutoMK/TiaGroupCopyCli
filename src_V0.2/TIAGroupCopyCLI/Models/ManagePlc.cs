@@ -159,13 +159,13 @@ namespace TIAGroupCopyCLI.Models
 
         }
         
-        public void ChangeIoSystemName(string aPrefix)
+        public void AddPrefixToIoSystemName(string aPrefix)
         {
             try
             {
                 if (NetworkInterfaces.Count>0)
                 {
-                    NetworkInterfaces[0].ChangeIoSystemName(aPrefix);
+                    NetworkInterfaces[0].AddPrefixToIoSystemName(aPrefix);
                 }
             }
             catch

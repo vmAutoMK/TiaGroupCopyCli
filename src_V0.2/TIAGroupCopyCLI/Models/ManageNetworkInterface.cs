@@ -38,8 +38,8 @@ namespace TIAGroupCopyCLI.Models
         #endregion
 
         #region Fields for Saved Information
-        private SingleAttribute PnDeviceNames;
-        private SingleAttribute PnDeviceNumbers;
+        private SingleAttribute PnDeviceName;
+        private SingleAttribute PnDeviceNumber;
         public List<TransferAreaAndAttributes> IDevicePartnerIoAddrsses = new List<TransferAreaAndAttributes>();
         bool isConnectedToIoSystem;
         bool isConnectedtoNetwork;
@@ -67,7 +67,7 @@ namespace TIAGroupCopyCLI.Models
         {
             if (NetworkInterface?.IoConnectors?.Count() > 0)
             {
-                PnDeviceNumbers = SingleAttribute.GetSimpleAttributeObject(NetworkInterface.IoConnectors[0], "PnDeviceNumber");
+                PnDeviceNumber = SingleAttribute.GetSimpleAttributeObject(NetworkInterface.IoConnectors[0], "PnDeviceNumber");
                 if (NetworkInterface.IoConnectors[0].ConnectedToIoSystem != null) isConnectedToIoSystem = true;
             }
 
@@ -77,7 +77,7 @@ namespace TIAGroupCopyCLI.Models
                 if (attributeValue is bool value)
                     if (value == false)
                     {
-                        PnDeviceNames = SingleAttribute.GetSimpleAttributeObject(NetworkInterface.Nodes[0], "PnDeviceName");
+                        PnDeviceName = SingleAttribute.GetSimpleAttributeObject(NetworkInterface.Nodes[0], "PnDeviceName");
                     }
 
                 if (NetworkInterface.Nodes[0].ConnectedSubnet != null) isConnectedtoNetwork = true;
@@ -92,19 +92,19 @@ namespace TIAGroupCopyCLI.Models
 
         public void CopyFromTemplate(ManageNetworkInterface aTemplateManageNetworkInterface)
         {
-            if (aTemplateManageNetworkInterface.PnDeviceNumbers != null)
+            if (aTemplateManageNetworkInterface?.PnDeviceNumber != null)
             {
-                if (PnDeviceNumbers == null)
+                if (PnDeviceNumber == null)
                 {
                     if (NetworkInterface?.IoConnectors?.Count() > 0)
                     {
-                        PnDeviceNumbers = new SingleAttribute(NetworkInterface.IoConnectors[0], "PnDeviceNumber", aTemplateManageNetworkInterface.PnDeviceNumbers.Value);
+                        PnDeviceNumber = new SingleAttribute(NetworkInterface.IoConnectors[0], "PnDeviceNumber", aTemplateManageNetworkInterface.PnDeviceNumber.Value);
                     }
                     
                 }
                 else
                 {
-                    PnDeviceNumbers.Value = aTemplateManageNetworkInterface.PnDeviceNumbers.Value;
+                    PnDeviceNumber.Value = aTemplateManageNetworkInterface.PnDeviceNumber.Value;
                 }
             }
 
@@ -118,14 +118,7 @@ namespace TIAGroupCopyCLI.Models
                 IDevicePartnerIoAddrsses[i].PartnerStartAddress.Value = aTemplateManageNetworkInterface.IDevicePartnerIoAddrsses[i].PartnerStartAddress.Value;
             }
         }
-        public void Restore()
-        {
-            //PnDeviceNumber.Restore();
-            foreach (ManageNetworkPort currentItem in DevicePorts)
-            {
-                currentItem.RestoreConfig();
-            }
-        }
+
 
         public void RestoreConfig_WithAdjustments(string prefix, ulong pnDeviceNumberOffset)
         {
@@ -134,23 +127,23 @@ namespace TIAGroupCopyCLI.Models
                 currentItem.RestoreConfig();
             }
             
-            PnDeviceNumbers?.RestoreWithOffset((int)pnDeviceNumberOffset);
-            PnDeviceNames?.RestoreWithPrefix(prefix);
+            PnDeviceNumber?.RestoreWithOffset((int)pnDeviceNumberOffset);
+            PnDeviceName?.RestoreWithPrefix(prefix);
 
 
         }
 
         public void RestorePnDeviceNamesWithPrefix(string prefix)
         {
-            PnDeviceNames?.RestoreWithPrefix(prefix);
+            PnDeviceName?.RestoreWithPrefix(prefix);
         }
 
         public void RestorePnDeviceNumberWithOffset(ulong offset)
         {
-            PnDeviceNumbers?.RestoreWithOffset(offset);
+            PnDeviceNumber?.RestoreWithOffset(offset);
         }
 
-        public void ChangeIpAddress(ulong ipAddressOffset, int nodeNumber = 0)
+        public void AddOffsetToIpAddress(ulong ipAddressOffset, int nodeNumber = 0)
         {
             if (NetworkInterface?.Nodes?.Count() > nodeNumber)
             {
@@ -176,7 +169,7 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
-        public void ChangePnDeviceName(string prefix, int nodeNumber = 0)
+        public void AddPrefixToPnDeviceName(string prefix, int nodeNumber = 0)
         {
 
             if (NetworkInterface?.Nodes?.Count() >  nodeNumber)
@@ -199,7 +192,7 @@ namespace TIAGroupCopyCLI.Models
         }
 
         #region Networking 
-        public void ChangeIoSystemName(string aPrefix, int IoControllerNumber = 0)
+        public void AddPrefixToIoSystemName(string aPrefix, int IoControllerNumber = 0)
         {
             if (NetworkInterface?.IoControllers?.Count() > IoControllerNumber)
             {
