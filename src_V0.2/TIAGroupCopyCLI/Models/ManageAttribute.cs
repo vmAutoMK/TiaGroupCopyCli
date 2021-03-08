@@ -29,6 +29,7 @@ using Siemens.Engineering.MC.Drives;
 
 using TIAHelper.Services;
 using TIAGroupCopyCLI.Models;
+using TIAGroupCopyCLI.MessagingFct;
 
 namespace TIAGroupCopyCLI.Models
 {
@@ -163,7 +164,7 @@ namespace TIAGroupCopyCLI.Models
                 }
                 catch (Exception ex)
                 {
-                    Program.FaultMessage("Could not get Attribute", ex, "AttributeValue.GetAttribute");
+                    Messaging.FaultMessage("Could not get Attribute", ex, "AttributeValue.GetAttribute");
                 }
             }
 
@@ -193,7 +194,7 @@ namespace TIAGroupCopyCLI.Models
                     }
                     catch (Exception ex)
                     {
-                        Program.FaultMessage("Could not get Attribute", ex, "AttributeValue.GetAttributes");
+                        Messaging.FaultMessage("Could not get Attribute", ex, "AttributeValue.GetAttributes");
                     }
                 }
             }
@@ -211,7 +212,7 @@ namespace TIAGroupCopyCLI.Models
                 }
                 catch (Exception ex)
                 {
-                    Program.FaultMessage("Could not set Attribute.", ex, "AttributeValue.SetAttribute");
+                    Messaging.FaultMessage("Could not set Attribute.", ex, "AttributeValue.SetAttribute");
                 }
 
             }
@@ -407,7 +408,7 @@ namespace TIAGroupCopyCLI.Models
             }
             catch (Exception ex)
             {
-                Program.FaultMessage("Could not set Attribute \"" + attributeName + "\" in engineeringObject.", ex);
+                Messaging.FaultMessage("Could not set Attribute \"" + attributeName + "\" in engineeringObject.", ex);
             }
             return false;
         }
@@ -421,7 +422,7 @@ namespace TIAGroupCopyCLI.Models
             }
             catch (Exception ex)
             {
-                Program.FaultMessage("Could not set Attribute \"" + attributeName + "\" in engineeringObject.", ex);
+                Messaging.FaultMessage("Could not set Attribute \"" + attributeName + "\" in engineeringObject.", ex);
             }
             return false;
         }
@@ -441,7 +442,7 @@ namespace TIAGroupCopyCLI.Models
             }
             catch (Exception ex) // all other exception 
             {
-                Program.FaultMessage("Could not get Attribute \"" + attributeName + "\" in engineeringObject.", ex);
+                Messaging.FaultMessage("Could not get Attribute \"" + attributeName + "\" in engineeringObject.", ex);
             }
             return null;
         }

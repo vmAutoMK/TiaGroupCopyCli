@@ -24,7 +24,9 @@ using Siemens.Engineering.Hmi.TextGraphicList;
 using Siemens.Engineering.Hmi.RuntimeScripting;
 using Siemens.Engineering.Compiler;
 using Siemens.Engineering.Library;
-
+using TIAGroupCopyCLI.MessagingFct;
+using System.Text.RegularExpressions;
+using TIAGroupCopyCLI.AppExceptions;
 
 namespace TIAGroupCopyCLI.Models
 {
@@ -43,6 +45,8 @@ namespace TIAGroupCopyCLI.Models
         public List<TransferAreaAndAttributes> IDevicePartnerIoAddrsses = new List<TransferAreaAndAttributes>();
         bool isConnectedToIoSystem;
         bool isConnectedtoNetwork;
+        string OriginalIoSystem0TiaName;
+        string TemplateIoSystem0TiaName;
         #endregion Fileds
 
         #region Constructor
@@ -58,6 +62,15 @@ namespace TIAGroupCopyCLI.Models
                 NetworkInterface = deviceItem.GetService<NetworkInterface>();
             }
             DevicePorts = ManageNetworkPort.GetAll_ManageNetworkPortObjects(NetworkInterface);
+
+            try
+            {
+                OriginalIoSystem0TiaName = NetworkInterface.IoControllers[0].IoSystem.Name ;
+            }
+            catch
+            {
+            }
+
         }                
         #endregion Constuctor
 
@@ -163,7 +176,7 @@ namespace TIAGroupCopyCLI.Models
                     }
                     catch (Exception ex)
                     {
-                        Program.FaultMessage("Could not set IP address of " + DeviceItem?.Name ?? "{null}" + "." + NetworkInterface?.Nodes?[nodeNumber]?.Name ?? "{null}", ex, "ManageNetworkInterface.ChangeIpAddresses");
+                        Messaging.FaultMessage("Could not set IP address of " + DeviceItem?.Name ?? "{null}" + "." + NetworkInterface?.Nodes?[nodeNumber]?.Name ?? "{null}", ex, "ManageNetworkInterface.ChangeIpAddresses");
                     }
                 }
             }
@@ -192,6 +205,37 @@ namespace TIAGroupCopyCLI.Models
         }
 
         #region Networking 
+
+        public void StripGroupNumAndPrefix(string devicePrefix)
+        {
+            TemplateIoSystem0TiaName = "temp" + Regex.Replace(OriginalIoSystem0TiaName, "^" + devicePrefix + "\\d+", "", RegexOptions.IgnoreCase);
+            if (TemplateIoSystem0TiaName.Length == 0)
+            {
+                ///throw new GroupCopyException($"Invalid name for IO System of template Group \"{OriginalIoSystem0TiaName}\". Can not remove prefix \"{devicePrefix}\" and GroupNumber .");
+                
+            }
+
+            if (NetworkInterface?.IoControllers?.Count > 0)
+            {
+                try
+                {
+                    NetworkInterface.IoControllers[0].IoSystem.Name = TemplateIoSystem0TiaName;
+                    if (NetworkInterface.IoControllers[0].IoSystem.Name != TemplateIoSystem0TiaName)
+                    {
+                        throw new GroupCopyException($"Could not rename IO Sytem \"{OriginalIoSystem0TiaName}\" in selected template group to generic name \"{TemplateIoSystem0TiaName}\", probably because that name already exsits.");
+                    }
+                }
+                catch (TIAGroupCopyCLI.AppExceptions.GroupCopyException e)
+                {
+                    throw;
+                }
+                catch (Exception e)
+                {
+                }
+            }
+
+        }
+
         public void AddPrefixToIoSystemName(string aPrefix, int IoControllerNumber = 0)
         {
             if (NetworkInterface?.IoControllers?.Count() > IoControllerNumber)

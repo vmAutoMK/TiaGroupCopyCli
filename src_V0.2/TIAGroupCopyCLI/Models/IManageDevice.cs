@@ -59,6 +59,8 @@ namespace TIAGroupCopyCLI.Models
 
         void RestoreConfig_WithAdjustments(string prefix, ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest);
 
+        void StripGroupNumAndPrefix(string devicePrefix);
+
         void AddPrefixToTiaName(string aPrefix);
 
         void AddPrefixToPnDeviceName(string aPrefix);

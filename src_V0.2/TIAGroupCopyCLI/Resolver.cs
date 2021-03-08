@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 
 using TIAGroupCopyCLI;
+using TIAGroupCopyCLI.MessagingFct;
 
 namespace TiaOpennessHelper.Utils
 {
@@ -80,7 +81,7 @@ namespace TiaOpennessHelper.Utils
                         }
                         else
                         {
-                            Program.Progress($"Openness dll version {projectVersion} not found (" + INSTALL_PATH_PRE + projectV.Major + "_" + projectV.Minor + API_PATH_SUBFOLDER + projectV.Major + "_" + projectV.Minor + API_PATH_POST + ")");
+                            Messaging.Progress($"Openness dll version {projectVersion} not found (" + INSTALL_PATH_PRE + projectV.Major + "_" + projectV.Minor + API_PATH_SUBFOLDER + projectV.Major + "_" + projectV.Minor + API_PATH_POST + ")");
                             return false;
                         }
                     }
@@ -93,14 +94,14 @@ namespace TiaOpennessHelper.Utils
                         }
                         else
                         {
-                            Program.Progress($"Openness dll version {projectVersion} not found (" + INSTALL_PATH_PRE + projectV.Major + "_" + projectV.Minor + API_PATH_SUBFOLDER + preferedTiaV.Major + "." + preferedTiaV.Minor + API_PATH_POST + ")");
+                            Messaging.Progress($"Openness dll version {projectVersion} not found (" + INSTALL_PATH_PRE + projectV.Major + "_" + projectV.Minor + API_PATH_SUBFOLDER + preferedTiaV.Major + "." + preferedTiaV.Minor + API_PATH_POST + ")");
                             return false;
                         }
                     }
                 }
                 else
                 {
-                    Program.Progress($"TIA version {projectVersion} not found (" + INSTALL_PATH_PRE + projectV.Major + "_" + projectV.Minor + BIN_PATH_POST + ")");
+                    Messaging.Progress($"TIA version {projectVersion} not found (" + INSTALL_PATH_PRE + projectV.Major + "_" + projectV.Minor + BIN_PATH_POST + ")");
                     return false;
                 }
             }
@@ -108,35 +109,35 @@ namespace TiaOpennessHelper.Utils
 
             if (AssemblyPath == "")
             {
-                Program.Progress("Could not find Openness DLL.");
+                Messaging.Progress("Could not find Openness DLL.");
                 return false;
             }
             if (!File.Exists(AssemblyPath))
             {
-                Program.Progress("The following DLL does not exits: " + AssemblyPath);
+                Messaging.Progress("The following DLL does not exits: " + AssemblyPath);
                 return false;
             }
 
 
             if (selectedTiaVersion != preferedTiaVersion)
             {
-                Program.Progress($"Application was tested with TIAP version {preferedTiaVersion}");
-                Program.Progress($"However, application will run with TIAP version {selectedTiaVersion}");
+                Messaging.Progress($"Application was tested with TIAP version {preferedTiaVersion}");
+                Messaging.Progress($"However, application will run with TIAP version {selectedTiaVersion}");
             }
             else
             {
-                Program.Progress($"Application will run with TIAP version {selectedTiaVersion}");
+                Messaging.Progress($"Application will run with TIAP version {selectedTiaVersion}");
             }
 
 
             if (selectedAssemblyVersion != preferedAssemblyVersion)
             {
-                Program.Progress($"Application was tested with Openness version {preferedAssemblyVersion}");
-                Program.Progress($"However, application will run with Openness version {selectedAssemblyVersion}");
+                Messaging.Progress($"Application was tested with Openness version {preferedAssemblyVersion}");
+                Messaging.Progress($"However, application will run with Openness version {selectedAssemblyVersion}");
             }
             else
             {
-                Program.Progress($"Application will run with Openness version {selectedAssemblyVersion}");
+                Messaging.Progress($"Application will run with Openness version {selectedAssemblyVersion}");
             }
 
             return true;
@@ -274,15 +275,15 @@ namespace TiaOpennessHelper.Utils
             {
                 if (string.IsNullOrEmpty(AssemblyPath) == true)
                 {
-                    Program.Progress("loading Assembly error: No Assembly defined");
+                    Messaging.Progress("loading Assembly error: No Assembly defined");
                 }
                 else if (!File.Exists(AssemblyPath))
                 {
-                    Program.Progress("loading Assemblyerror: " + AssemblyPath + " does not exists");
+                    Messaging.Progress("loading Assemblyerror: " + AssemblyPath + " does not exists");
                 }
                 else
                 {
-                    Program.Progress("loading Assembly: " + AssemblyPath);
+                    Messaging.Progress("loading Assembly: " + AssemblyPath);
                     return Assembly.LoadFrom(AssemblyPath);
                 }
             }

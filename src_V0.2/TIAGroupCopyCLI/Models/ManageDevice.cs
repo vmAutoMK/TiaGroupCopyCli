@@ -30,6 +30,8 @@ using Siemens.Engineering.MC.Drives;
 
 using TiaOpennessHelper.Utils;
 using TIAHelper.Services;
+using System.Text.RegularExpressions;
+using TIAGroupCopyCLI.AppExceptions;
 
 namespace TIAGroupCopyCLI.Models
 {
@@ -48,7 +50,8 @@ namespace TIAGroupCopyCLI.Models
         #region Fields
         
         protected readonly ManageAttributeGroup FDestinationAddress_attribues = new ManageAttributeGroup();
-        protected readonly string OriginalName;
+        protected readonly string OriginalTiaDeviceName;
+        string TemplateTiaDeviceName;
 
         #endregion Fields
 
@@ -60,7 +63,7 @@ namespace TIAGroupCopyCLI.Models
             NetworkInterfaces = ManageNetworkInterface.GetAll_ManageNetworkInterfaceObjects(Device);
             try
             {
-                OriginalName = Device.DeviceItems[1].Name;
+                OriginalTiaDeviceName = Device.DeviceItems[1].Name;
             }
             catch { }
         }
@@ -78,17 +81,17 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
-        public void CopyFromTemplate(ManageDevice atemplateDevice)
+        public void CopyFromTemplate(ManageDevice templateDevice)
         {
 
-            for (int i = 0; i < atemplateDevice.FDestinationAddress_attribues.Count; i++)
+            for (int i = 0; i < templateDevice.FDestinationAddress_attribues.Count; i++)
             {
-                FDestinationAddress_attribues[i].Value = atemplateDevice.FDestinationAddress_attribues[i].Value;
+                FDestinationAddress_attribues[i].Value = templateDevice.FDestinationAddress_attribues[i].Value;
             }
 
-            for (int i = 0; i < atemplateDevice.NetworkInterfaces.Count; i++)
+            for (int i = 0; i < templateDevice.NetworkInterfaces.Count; i++)
             {
-                NetworkInterfaces[i]?.CopyFromTemplate(atemplateDevice.NetworkInterfaces[i]);
+                NetworkInterfaces[i]?.CopyFromTemplate(templateDevice.NetworkInterfaces[i]);
 
 
             }
@@ -109,15 +112,33 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
-        public void StripPrefixFromTiaName(string aPrefix)
+
+        public void StripGroupNumAndPrefix(string devicePrefix)
         {
+            TemplateTiaDeviceName = "temp" + Regex.Replace(OriginalTiaDeviceName, "^" + devicePrefix + "\\d+", "", RegexOptions.IgnoreCase);
+            if (TemplateTiaDeviceName.Length == 0)
+            {
+                ///throw new GroupCopyException($"Invalid name for IO System of template Group \"{OriginalIoSystem0TiaName}\". Can not remove prefix \"{devicePrefix}\" and GroupNumber .");
+
+            }
+
             try
             {
-                Device.DeviceItems[1].Name = aPrefix + Device.DeviceItems[1].Name;
+                Device.DeviceItems[1].Name = TemplateTiaDeviceName;
+                if (Device.DeviceItems[1].Name != TemplateTiaDeviceName)
+                {
+                    throw new GroupCopyException($"Could not rename IO Sytem \"{OriginalTiaDeviceName}\" in selected template group to generic name \"{TemplateTiaDeviceName}\", probably because that name already exsits.");
+                }
+            }
+            catch (TIAGroupCopyCLI.AppExceptions.GroupCopyException e)
+            {
+                throw;
             }
             catch
             {
             }
+
+
         }
         public void AddPrefixToTiaName(string aPrefix)
         {

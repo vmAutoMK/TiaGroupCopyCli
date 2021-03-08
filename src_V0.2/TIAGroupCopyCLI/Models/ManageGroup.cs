@@ -11,6 +11,9 @@ using Siemens.Engineering.HW.Features;
 using Siemens.Engineering.SW;
 using Siemens.Engineering.MC.Drives;
 using Siemens.Engineering.Hmi;
+using System.Globalization;
+using System.Text.RegularExpressions;
+using TIAGroupCopyCLI.AppExceptions;
 
 //using HmiTarget = Siemens.Engineering.Hmi.HmiTarget;
 //using PlcSoftware = Siemens.Engineering.SW.PlcSoftware;
@@ -43,9 +46,10 @@ namespace TIAGroupCopyCLI.Models
         ulong lowerFDest;
         ulong upperFDest;
 
-        string currentPrefix;
-        string currentGroupName;
-        string orignalGroupName;
+        string currentPrefix;  //TODO delete
+        string currentGroupName; //TODO delete
+        readonly string orignalGroupName;//TODO use
+        string templateGroupName;//TODO use
 
         #endregion Fields
 
@@ -90,8 +94,19 @@ namespace TIAGroupCopyCLI.Models
             GetAll_DevicesInGroup(tiaGroup);
 
             orignalGroupName = tiaGroup.Name;
-            currentPrefix = prefix + groupCounter.ToString(indexFormat);
-            currentGroupName = newGroupName + groupCounter.ToString(indexFormat);
+            currentPrefix = prefix + groupCounter.ToString(indexFormat, CultureInfo.InvariantCulture);
+            currentGroupName = newGroupName + groupCounter.ToString(indexFormat, CultureInfo.InvariantCulture);
+
+            //TODO : maybe delete
+        }
+
+        public ManageGroup(DeviceUserGroup deviceUserGroup)
+        {
+            tiaGroup = deviceUserGroup;
+            orignalGroupName = tiaGroup.Name;
+
+            GetAll_DevicesInGroup(tiaGroup);
+            
         }
 
         #endregion Constructor
@@ -169,7 +184,7 @@ namespace TIAGroupCopyCLI.Models
 
         }
 
-        public  void SavePlcConfigInTemplate()
+        public  void xSavePlcConfigInTemplate()
         {
             foreach (ManagePlc currentPLC in Devices.Where(d => d.DeviceType == DeviceType.Plc))
             {
@@ -211,14 +226,33 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
-        public void StripGroupNumAndPrefix(bool groupNameIsStartGroup, string GroupPrefix)
+        public void StripGroupNumAndPrefix(string devicePrefix)
         {
-            if (groupNameIsStartGroup)
+
+            Match findTemplateGroupName = Regex.Match(orignalGroupName, ".*?\\D(?=\\d*$)", RegexOptions.IgnoreCase);
+
+            if (findTemplateGroupName.Success)
             {
-                currentGroupName = GroupPrefix;
-                tiaGroup.Name = currentGroupName;
+                templateGroupName = findTemplateGroupName.Value + "temp";
+            }
+            else
+            {
+                templateGroupName = "temp";
             }
 
+
+            tiaGroup.Name = templateGroupName;
+            if (tiaGroup.Name != templateGroupName)
+            {
+                throw new GroupCopyException($"Could not rename selected template group \"{orignalGroupName}\" to generic group name \"{templateGroupName}\", probably because a group with that name already exits.");
+            }
+
+            Plc?.StripGroupNumAndPrefixFromIoSytem(devicePrefix);
+
+            foreach (IManageDevice currentDevice in Devices)
+            {
+                currentDevice.StripGroupNumAndPrefix(devicePrefix);
+            }
 
         }
 

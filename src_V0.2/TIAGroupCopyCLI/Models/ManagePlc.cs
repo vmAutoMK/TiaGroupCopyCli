@@ -154,11 +154,20 @@ namespace TIAGroupCopyCLI.Models
             }
 
             base.RestoreConfig_WithAdjustments(prefix, pnDeviceNumberOffset, fSourceOffset, fDestOffset, lowerFDest, upperFDest);
+        }
 
+        public void StripGroupNumAndPrefixFromIoSytem(string devicePrefix)
+        {
+
+            if (NetworkInterfaces.Count > 0)
+            {
+                NetworkInterfaces[0].StripGroupNumAndPrefix(devicePrefix);
+            }
 
 
         }
-        
+
+
         public void AddPrefixToIoSystemName(string aPrefix)
         {
             try

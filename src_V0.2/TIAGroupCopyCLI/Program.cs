@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Reflection;
-using System.IO;
+//using System.IO;
 using System.Net;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +15,9 @@ using TiaOpennessHelper.Utils;
 using TIAHelper.Services;
 using TIAGroupCopyCLI.Models;
 using TIAGroupCopyCLI.Para;
+using TIAGroupCopyCLI.Models.template;
+using TIAGroupCopyCLI.MessagingFct;
+using TIAGroupCopyCLI.AppExceptions;
 
 namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 {
@@ -39,34 +42,18 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             //string assemblyVersion = Assembly.GetExecutingAssembly().GetName().Version.ToString();
             string fileVersion = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
             //string productVersion = FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion;
-            Progress("TIA Group copy v" + fileVersion);
-            Progress("This beta version is a customized solution for now");
+            Messaging.Progress("TIA Group copy v" + fileVersion);
+            Messaging.Progress("This beta version is a customized solution for now");
 
 
-            Progress("================================================================");
-
-            Parameters = new Parameters(args);
-            if (!Parameters.ParameterOK)
-            {
-                Console.WriteLine("");
-                Console.WriteLine("Hit enter to exit.");
-                Console.ReadLine();
-                return;
-            }
-
-            if (!Heandlers.SelectAssmebly(Parameters.ProjectVersion, TIAP_VERSION_USED_FOR_TESTING, OPENESS_VERSION_USED_FOR_TESTING))
-            {
-                Console.WriteLine("");
-                Console.WriteLine("Hit enter to exit.");
-                Console.ReadLine();
-                return;
-            }
-            Heandlers.AddAssemblyResolver();
+            Messaging.Progress("================================================================");
 
 
 
 
-            RunTiaPortal();
+
+
+            Run(args);
 
 
 
@@ -76,65 +63,83 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             Console.ReadLine();
         }
 
+        //=================================================================================================
+        private static void Run(string[] args)
+        {
+            try
+            {
+                Parameters = new Parameters(args);
+            }
+            catch (TIAGroupCopyCLI.AppExceptions.ParameterException)
+            {
+                return;
+            }
+
+
+            if (!Heandlers.SelectAssmebly(Parameters.ProjectVersion, TIAP_VERSION_USED_FOR_TESTING, OPENESS_VERSION_USED_FOR_TESTING))
+            {
+                return;
+            }
+            Heandlers.AddAssemblyResolver();
+
+
+            try
+            {
+                GroupCopy();
+            }
+            catch (TIAGroupCopyCLI.AppExceptions.GroupCopyException e)
+            {
+                Messaging.FaultMessage(e.Message);
+                return;
+            }
+            finally
+            {
+                tiaPortal.Dispose();
+            }
+
+        }
+
 
         //=================================================================================================
-        private static void RunTiaPortal()
+        private static void GroupCopy()
         {
-            uint groupCounter = Parameters.StartGroupNum;
+            uint groupCounter = 1;
 
+           #region tia and project
 
-            #region test: hardcode path
-            /*
-            Console.WriteLine("!!!with hardcoded project path for testing!!!");
-
-            Parameters.ProjectPath = @"D:\Source\TiaGroupCopyCli\TIA_samples\EMS\EMS.ap15_1";
-             Parameters.TemplateGroupName = "EMS_Controller";
-             Parameters.NewGroupNamePrefix = "EMS_Controller ";
-             Parameters.Prefix = "ems";
-            
-           Parameters.ProjectPath = "D:\\KnesMX\\source\\TIA\\Groups\\Groups.ap15_1";
-           Parameters.TemplateGroupName = "Group_";
-           Parameters.Prefix = "sk";
-           Parameters.NumOfGroups = 3;
-           Parameters.FBaseAddrOffset = 1;
-           Parameters.FDestAddrOffset = 100;
-           Parameters.IDeviceDeviceNumberOffset = 1;
-           Parameters.IDeviceIoAddressOffset = 100;
-           */
-            #endregion
-
-            #region tia and project
-
-            Progress("Check running TIA Portal");
+            Messaging.Progress("Check running TIA Portal");
             bool tiaStartedWithoutInterface = false;
 
             Service.OpenProject(Parameters.ProjectPath, ref tiaPortal, ref project, ref tiaStartedWithoutInterface);
 
             if ((tiaPortal == null) || (project == null))
             {
-                CancelGeneration("Could not open project.");
-                return;
+                throw new GroupCopyException("Could not open project.");
             }
 
-            Progress(String.Format("Project {0} is open", project.Path.FullName));
-            
+            Messaging.Progress($"Project {project.Path.FullName} is open");
+
             #endregion
 
 
             #region get template group
-            Progress("Searching for template group.");
+            Messaging.Progress("Searching for template group.");
+
+            ManageTemplateGroup xxx =  ManageTemplateGroup.CreateTemplate(project, Parameters.TemplateGroupName, Parameters.TemplateGroupNumber , Parameters.DevicePrefix);
+
+            throw new GroupCopyException("TEMP END OF PROGRAM");
 
             DeviceUserGroup tiaTemplateGroup = project.DeviceGroups.Find(Parameters.TemplateGroupName);
             if (tiaTemplateGroup == null)
             {
-                CancelGeneration("Group not found.");
+                //CancelGeneration("Group not found.");
                 return;
             }
 
-            ManageGroup templateGroup = new ManageGroup(tiaTemplateGroup, Parameters.NewGroupNamePrefix, Parameters.Prefix, groupCounter, Parameters.IndexFormat);
+            ManageGroup templateGroup = new ManageGroup(tiaTemplateGroup, Parameters.GroupNamePrefix, Parameters.DevicePrefix, groupCounter, Parameters.IndexFormat);
             if (templateGroup.Devices.Where(d => d.DeviceType == DeviceType.Plc).Count() != 1)
             {
-                CancelGeneration("No PLC or more than 1 PLC in group.");
+                //CancelGeneration("No PLC or more than 1 PLC in group.");
                 return;
             }
             //templateGroup.SavePlcConfigInTemplate();
@@ -154,13 +159,13 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             }
             catch (Exception ex)
             {
-                CancelGeneration("Could not create master copy.",ex);
+                //CancelGeneration("Could not create master copy.",ex);
                 return;
             }
 
             if (templateCopy == null)
             {
-                CancelGeneration("Could not create master copy.");
+                //CancelGeneration("Could not create master copy.");
                 return;
             }
 
@@ -172,15 +177,15 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
 
 
             //templateGroup.SavePlcConfigInTemplate();
-            
-            
+
+
 
             #endregion
 
             #region change name and IP of first group (template Group)
 
 
-            Progress("Adjusting template group.");
+            Messaging.Progress("Adjusting template group.");
             templateGroup.ChangeNames();
            
             #endregion
@@ -192,7 +197,7 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             while (++groupCounter <= Parameters.NumOfGroups)
             {
                 #region copy group
-                Progress("Creating Group " + groupCounter);
+                Messaging.Progress("Creating Group " + groupCounter);
                // currentPrefix = Parameters.Prefix + groupCounter.ToString(indexFormat);
 
                 DeviceUserGroup newTiaGroup;
@@ -202,17 +207,17 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
                     newTiaGroup = tiaUserGroups.CreateFrom(templateCopy);
                     if (newTiaGroup == null)
                     {
-                        CancelGeneration("Could not create new Group.");
+                        //CancelGeneration("Could not create new Group.");
                         return;
                     }
                     else
                     {
-                        newGroup = new ManageGroup(newTiaGroup, Parameters.NewGroupNamePrefix, Parameters.Prefix, groupCounter, Parameters.IndexFormat);
+                        newGroup = new ManageGroup(newTiaGroup, Parameters.GroupNamePrefix, Parameters.DevicePrefix, groupCounter, Parameters.IndexFormat);
                     }
                 }
                 catch(Exception e)
                 {
-                    CancelGeneration("Could not create new Group.", e);
+                    //CancelGeneration("Could not create new Group.", e);
                     return;
                 }
 
@@ -243,21 +248,21 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             }
             catch(Exception ex)
             {
-                Program.FaultMessage("Could not delete Mastercopy.", ex);
+                Messaging.FaultMessage("Could not delete Mastercopy.", ex);
             }
 
-            Progress("");
+            Messaging.Progress("");
 
-            Console.WriteLine("Copy complete.");
+            Messaging.Progress("Copy complete.");
             if (tiaStartedWithoutInterface == true)
             {
-                Console.WriteLine("Saving project.");
+                Messaging.Progress("Saving project.");
                 project.Save();
                 project.Close();
             }
             else
             {
-                Console.WriteLine("Please save project within TIAP.");
+                Messaging.Progress("Please save project within TIAP.");
             }
 
             try
@@ -273,13 +278,13 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
         }
 
         #region messaging
-        public static void CancelGeneration(string message, Exception e = null)
+        public static void xCancelGeneration(string message, Exception e = null)
         {
             //MessageBox.Show(message);
             //GenerateText = notInProgressText;
             //ProgressMessage = "";
-            Console.WriteLine("");
-            Console.WriteLine(message);
+            Messaging.Progress("");
+            Messaging.Progress(message);
             if (e != null)
             {
                 Console.WriteLine(e.Message);
@@ -293,33 +298,10 @@ namespace TIAGroupCopyCLI //TIAGroupCopyCLI
             {
 
             }
-            Console.WriteLine("");
+            Messaging.Progress("");
         }
 
-        public static void Progress(string message)
-        {
-            //MessageBox.Show(message);
-            //GenerateText = notInProgressText;
-            //ProgressMessage = "";
-            Console.WriteLine(message);
-        }
-        public static void FaultMessage(string message, Exception ex = null, string functionName = "")
-        {
-            //MessageBox.Show(message);
-            //GenerateText = notInProgressText;
-            //ProgressMessage = "";
-            Console.WriteLine("");
-            Console.WriteLine(message);
-            if (functionName!="")
-            {
-                Console.WriteLine("Exception in " + functionName + " : ");
-            }
-            if (ex != null)
-            {
-                Console.WriteLine(ex.Message);
-            }
-            Console.WriteLine("");
-        }
+
 
         #endregion
     }
