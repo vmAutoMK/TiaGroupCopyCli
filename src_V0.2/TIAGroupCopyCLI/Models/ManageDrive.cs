@@ -115,14 +115,14 @@ namespace TIAGroupCopyCLI.Models
             base.SaveConfig();
         }
         
-        public new void RestoreConfig_WithAdjustments(string prefix, ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest)
+        public new void RestoreConfig_WithAdjustments(ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest)
         {
             foreach (TelegramAndAttributes currentTelegram in AllTelegrams)
             {
                 currentTelegram.RestoreConfig_WithAdjustments(fDestOffset, lowerFDest, upperFDest);
             }
 
-            base.RestoreConfig_WithAdjustments(prefix, pnDeviceNumberOffset, fSourceOffset, fDestOffset, lowerFDest, upperFDest);
+            base.RestoreConfig_WithAdjustments(pnDeviceNumberOffset, fSourceOffset, fDestOffset, lowerFDest, upperFDest);
         }
 
         #endregion methods

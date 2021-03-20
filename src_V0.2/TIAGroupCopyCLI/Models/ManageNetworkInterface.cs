@@ -34,25 +34,27 @@ namespace TIAGroupCopyCLI.Models
     public class ManageNetworkInterface
     {
         #region References to openness object and managed objcts
-        public DeviceItem DeviceItem;
-        public NetworkInterface NetworkInterface;
-        public List<ManageNetworkPort> DevicePorts { get; set; } = new List<ManageNetworkPort>();
+        private readonly DeviceItem DeviceItem;
+        private readonly NetworkInterface NetworkInterface;
+        private List<ManageNetworkPort> DevicePorts { get; set; } = new List<ManageNetworkPort>();
         #endregion
 
         #region Fields for Saved Information
-        private SingleAttribute PnDeviceName;
+        //private SingleAttribute PnDeviceName;
         private SingleAttribute PnDeviceNumber;
-        public List<TransferAreaAndAttributes> IDevicePartnerIoAddrsses = new List<TransferAreaAndAttributes>();
-        bool isConnectedToIoSystem;
-        bool isConnectedtoNetwork;
-        string OriginalIoSystem0TiaName;
-        string TemplateIoSystem0TiaName;
+        private List<TransferAreaAndAttributes> IDevicePartnerIoAddrsses = new List<TransferAreaAndAttributes>();
+        private bool isConnectedToIoSystem;
+        private bool isConnectedtoNetwork;
+        private readonly string OriginalIoSystem0TiaName;
+        private string TemplateIoSystem0TiaName;
+        private readonly string OriginalPnDeviceName;
+        private string TemplatePnDeviceName;
         #endregion Fileds
 
         #region Constructor
         public ManageNetworkInterface(DeviceItem deviceItem, NetworkInterface networkInterface = null)
         {
-            DeviceItem = deviceItem;
+            DeviceItem = deviceItem ?? throw new ArgumentNullException(nameof(deviceItem), "Invalid deviceItem");
             if (networkInterface != null)
             {
                 NetworkInterface = networkInterface;
@@ -65,11 +67,30 @@ namespace TIAGroupCopyCLI.Models
 
             try
             {
-                OriginalIoSystem0TiaName = NetworkInterface.IoControllers[0].IoSystem.Name ;
+                if (NetworkInterface.IoControllers.Count > 0)
+                {
+                    OriginalIoSystem0TiaName = NetworkInterface.IoControllers[0].IoSystem.Name;
+                }
+            }
+            catch(System.NullReferenceException)
+            { }
+            catch (Siemens.Engineering.EngineeringTargetInvocationException)
+            { }
+
+            try
+            {
+                if (NetworkInterface?.Nodes.Count > 0)
+                {
+                    object attributeValue = SingleAttribute.GetAttribute_Wrapper(NetworkInterface.Nodes[0], "PnDeviceNameAutoGeneration");
+                    if (attributeValue is bool value)
+                        if (value == false)
+                        {
+                            OriginalPnDeviceName = (string)SingleAttribute.GetAttribute_Wrapper(NetworkInterface.Nodes[0], "PnDeviceName");
+                        }
+                }
             }
             catch
-            {
-            }
+            {  }
 
         }                
         #endregion Constuctor
@@ -78,62 +99,65 @@ namespace TIAGroupCopyCLI.Models
 
         public void SaveConfig()
         {
-            if (NetworkInterface?.IoConnectors?.Count() > 0)
+            if (NetworkInterface?.IoConnectors?.Count > 0)
             {
                 PnDeviceNumber = SingleAttribute.GetSimpleAttributeObject(NetworkInterface.IoConnectors[0], "PnDeviceNumber");
                 if (NetworkInterface.IoConnectors[0].ConnectedToIoSystem != null) isConnectedToIoSystem = true;
             }
 
-            if (NetworkInterface?.Nodes.Count() > 0)
+            
+            if (NetworkInterface?.Nodes.Count > 0)
             {
+                /*
                 object attributeValue = SingleAttribute.GetAttribute_Wrapper(NetworkInterface.Nodes[0], "PnDeviceNameAutoGeneration");
                 if (attributeValue is bool value)
                     if (value == false)
                     {
                         PnDeviceName = SingleAttribute.GetSimpleAttributeObject(NetworkInterface.Nodes[0], "PnDeviceName");
                     }
-
+                */
                 if (NetworkInterface.Nodes[0].ConnectedSubnet != null) isConnectedtoNetwork = true;
             }
+            
 
-            foreach (ManageNetworkPort currentPort in DevicePorts)
+                foreach (ManageNetworkPort currentPort in DevicePorts)
             {
                 currentPort.SaveConfig();
             }
 
         }
 
-        public void CopyFromTemplate(ManageNetworkInterface aTemplateManageNetworkInterface)
+        public void CopyFromTemplate(ManageNetworkInterface templateManageNetworkInterface)
         {
-            if (aTemplateManageNetworkInterface?.PnDeviceNumber != null)
+            if (templateManageNetworkInterface?.PnDeviceNumber != null)
             {
                 if (PnDeviceNumber == null)
                 {
-                    if (NetworkInterface?.IoConnectors?.Count() > 0)
+                    if (NetworkInterface?.IoConnectors?.Count > 0)
                     {
-                        PnDeviceNumber = new SingleAttribute(NetworkInterface.IoConnectors[0], "PnDeviceNumber", aTemplateManageNetworkInterface.PnDeviceNumber.Value);
+                        PnDeviceNumber = new SingleAttribute(NetworkInterface.IoConnectors[0], "PnDeviceNumber", templateManageNetworkInterface.PnDeviceNumber.Value);
                     }
                     
                 }
                 else
                 {
-                    PnDeviceNumber.Value = aTemplateManageNetworkInterface.PnDeviceNumber.Value;
+                    PnDeviceNumber.Value = templateManageNetworkInterface.PnDeviceNumber.Value;
                 }
             }
 
-            if (IDevicePartnerIoAddrsses.Count < aTemplateManageNetworkInterface.IDevicePartnerIoAddrsses.Count)
+            if (IDevicePartnerIoAddrsses.Count < templateManageNetworkInterface.IDevicePartnerIoAddrsses.Count)
             {
                 IDevicePartnerIoAddrsses.Clear();
                 Save_iDeviceParnerIoAdresses();
             }
-            for (int i = 0; i < aTemplateManageNetworkInterface.IDevicePartnerIoAddrsses.Count; i++)
+            for (int i = 0; i < templateManageNetworkInterface.IDevicePartnerIoAddrsses.Count; i++)
             {
-                IDevicePartnerIoAddrsses[i].PartnerStartAddress.Value = aTemplateManageNetworkInterface.IDevicePartnerIoAddrsses[i].PartnerStartAddress.Value;
+                IDevicePartnerIoAddrsses[i].PartnerStartAddress.Value = templateManageNetworkInterface.IDevicePartnerIoAddrsses[i].PartnerStartAddress.Value;
             }
         }
 
 
-        public void RestoreConfig_WithAdjustments(string prefix, ulong pnDeviceNumberOffset)
+        public void RestoreConfig_WithAdjustments(ulong pnDeviceNumberOffset)
         {
             foreach (ManageNetworkPort currentItem in DevicePorts)
             {
@@ -141,24 +165,12 @@ namespace TIAGroupCopyCLI.Models
             }
             
             PnDeviceNumber?.RestoreWithOffset((int)pnDeviceNumberOffset);
-            PnDeviceName?.RestoreWithPrefix(prefix);
-
-
-        }
-
-        public void RestorePnDeviceNamesWithPrefix(string prefix)
-        {
-            PnDeviceName?.RestoreWithPrefix(prefix);
-        }
-
-        public void RestorePnDeviceNumberWithOffset(ulong offset)
-        {
-            PnDeviceNumber?.RestoreWithOffset(offset);
+            //PnDeviceName?.RestoreWithPrefix(prefix);
         }
 
         public void AddOffsetToIpAddress(ulong ipAddressOffset, int nodeNumber = 0)
         {
-            if (NetworkInterface?.Nodes?.Count() > nodeNumber)
+            if (NetworkInterface?.Nodes?.Count > nodeNumber)
             {
                 string[] tempIPaddress = null;
                 try
@@ -182,10 +194,106 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
-        public void AddPrefixToPnDeviceName(string prefix, int nodeNumber = 0)
+        public void StripGroupNumAndPrefixFromPnDeviceName(string devicePrefix)
+        {
+            try
+            {
+                if (NetworkInterface?.Nodes.Count > 0)
+                {
+                    object attributeValue = SingleAttribute.GetAttribute_Wrapper(NetworkInterface.Nodes[0], "PnDeviceNameAutoGeneration");
+                    if (attributeValue is bool value)
+                        if (value == false)
+                        {
+                            TemplatePnDeviceName = "temp" + Regex.Replace(OriginalPnDeviceName, "^" + devicePrefix + "\\d+", "", RegexOptions.IgnoreCase);
+                            SingleAttribute.SetAttribute_Wrapper(NetworkInterface.Nodes[0], "PnDeviceName", TemplatePnDeviceName);
+
+                            //check
+                            string tempCheckPnDeviceName = (string)SingleAttribute.GetAttribute_Wrapper(NetworkInterface.Nodes[0], "PnDeviceName");
+                            if (tempCheckPnDeviceName != TemplatePnDeviceName)
+                            {
+                                throw new GroupCopyException($"Could not rename PN DevicceName \"{OriginalPnDeviceName}\" in selected template group to generic name \"{TemplatePnDeviceName}\", probably because that name already exsits.");
+                            }
+                        }
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        public void RestoreGroupNumAndPrefixToPnDeviceName()
         {
 
-            if (NetworkInterface?.Nodes?.Count() >  nodeNumber)
+            try
+            {
+                if (NetworkInterface?.Nodes.Count > 0)
+                {
+                    object attributeValue = SingleAttribute.GetAttribute_Wrapper(NetworkInterface.Nodes[0], "PnDeviceNameAutoGeneration");
+                    if (attributeValue is bool value)
+                        if (value == false)
+                        {
+                            if (OriginalPnDeviceName.Length == 0)
+                            {
+                                throw new ProgrammingException($"Could not restore PN DeviceName of template Group because the orignal name is blank \"{OriginalPnDeviceName}\".");
+                            }
+                            SingleAttribute.SetAttribute_Wrapper(NetworkInterface.Nodes[0], "PnDeviceName", OriginalPnDeviceName);
+
+                            //check
+                            string tempCheckPnDeviceName = (string)SingleAttribute.GetAttribute_Wrapper(NetworkInterface.Nodes[0], "PnDeviceName");
+                            if (tempCheckPnDeviceName != OriginalPnDeviceName)
+                            {
+                                throw new GroupCopyException($"Could not rename PN DevicceName back to \"{OriginalPnDeviceName}\" in selected template group.");
+                            }
+                        }
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        public void ChangeGroupNumAndPrefixToPnDeviceName(string devicePrefix, string groupNumber, int nodeNumber = 0)
+        {
+            if (NetworkInterface?.Nodes?.Count > nodeNumber)
+            {
+                try
+                {
+
+                    object attributeValue = SingleAttribute.GetAttribute_Wrapper(NetworkInterface.Nodes[nodeNumber], "PnDeviceNameAutoGeneration");
+                    if (attributeValue is bool value)
+                        if (value == false)
+                        {
+                            if (groupNumber?.Length == 0)
+                            {
+                                throw new ProgrammingException($"Could not change PN Device Name because of invalid group number.");
+                            }
+                            string currentPnDeviceName = (string)SingleAttribute.GetAttribute_Wrapper(NetworkInterface.Nodes[0], "PnDeviceName");
+
+                            string newPnDeviceName = Regex.Replace(currentPnDeviceName, "^temp", devicePrefix + groupNumber);
+                            if (newPnDeviceName.Length == 0)
+                            {
+                                throw new GroupCopyException($"Could not change PN Device Name.");
+                            }
+                            SingleAttribute.SetAttribute_Wrapper(NetworkInterface.Nodes[nodeNumber], "PnDeviceName", newPnDeviceName);
+
+                            //check
+                            string tempCheckPnDeviceName = (string)SingleAttribute.GetAttribute_Wrapper(NetworkInterface.Nodes[nodeNumber], "PnDeviceName");
+                            if (tempCheckPnDeviceName != newPnDeviceName)
+                            {
+                                throw new GroupCopyException($"Could not rename PN DevicceName to \"{newPnDeviceName}\".");
+                            }
+                        }
+                }
+                catch
+                {
+                }
+            }
+        }
+
+        public void xAddPrefixToPnDeviceName(string prefix, int nodeNumber = 0)
+        {
+
+            if (NetworkInterface?.Nodes?.Count >  nodeNumber)
             {
                 string tempPnDeviceName = null;
 
@@ -206,14 +314,9 @@ namespace TIAGroupCopyCLI.Models
 
         #region Networking 
 
-        public void StripGroupNumAndPrefix(string devicePrefix)
+        public void StripGroupNumAndPrefixFromIoSystemName(string devicePrefix)
         {
             TemplateIoSystem0TiaName = "temp" + Regex.Replace(OriginalIoSystem0TiaName, "^" + devicePrefix + "\\d+", "", RegexOptions.IgnoreCase);
-            if (TemplateIoSystem0TiaName.Length == 0)
-            {
-                ///throw new GroupCopyException($"Invalid name for IO System of template Group \"{OriginalIoSystem0TiaName}\". Can not remove prefix \"{devicePrefix}\" and GroupNumber .");
-                
-            }
 
             if (NetworkInterface?.IoControllers?.Count > 0)
             {
@@ -233,27 +336,67 @@ namespace TIAGroupCopyCLI.Models
                 {
                 }
             }
-
         }
 
-        public void AddPrefixToIoSystemName(string aPrefix, int IoControllerNumber = 0)
+        public void RestoreGroupNumAndPrefixToIoSystemName()
         {
-            if (NetworkInterface?.IoControllers?.Count() > IoControllerNumber)
+            if (NetworkInterface?.IoControllers?.Count > 0)
             {
                 try
                 {
-                    NetworkInterface.IoControllers[IoControllerNumber].IoSystem.Name = aPrefix + NetworkInterface.IoControllers[IoControllerNumber].IoSystem.Name; 
+                    if (OriginalIoSystem0TiaName.Length == 0)
+                    {
+                        throw new ProgrammingException($"Could not restore IO System of template Group because the orignal name is blank \"{OriginalIoSystem0TiaName}\".");
+                    }
+
+                    NetworkInterface.IoControllers[0].IoSystem.Name = OriginalIoSystem0TiaName;
+                    if (NetworkInterface.IoControllers[0].IoSystem.Name != OriginalIoSystem0TiaName)
+                    {
+                        throw new GroupCopyException($"Could not restore IO Sytem name in selected template group from \"{TemplateIoSystem0TiaName}\"  to orignal name \"{OriginalIoSystem0TiaName}\".");
+                    }
                 }
-                catch
+                catch (TIAGroupCopyCLI.AppExceptions.GroupCopyException e)
+                {
+                    throw;
+                }
+                catch (Exception e)
                 {
                 }
             }
-            
         }
+
+        public void ChangeGroupNumAndPrefixToIoSystemName(string devicePrefix, string groupNumber, int IoControllerNumber = 0)
+        {
+            if (NetworkInterface?.IoControllers?.Count > 0)
+            {
+                try
+                {
+                    if (groupNumber?.Length == 0)
+                    {
+                        throw new ProgrammingException($"Could not rename IO System oname because of invalid group number");
+                    }
+                    string newName = Regex.Replace(NetworkInterface.IoControllers[IoControllerNumber].IoSystem.Name, "^temp", devicePrefix + groupNumber);
+
+                    NetworkInterface.IoControllers[IoControllerNumber].IoSystem.Name = newName;
+                    if (NetworkInterface.IoControllers[IoControllerNumber].IoSystem.Name != newName)
+                    {
+                        throw new GroupCopyException($"Could not rename IO Sytem name in selected template group to new name \"{newName}\".");
+                    }
+                }
+                catch (TIAGroupCopyCLI.AppExceptions.GroupCopyException e)
+                {
+                    throw;
+                }
+                catch (Exception e)
+                {
+                }
+            }
+        }
+
         public Subnet Get_Subnet(int nodeNumber = 0)
         {
 
-            if (NetworkInterface?.Nodes?.Count() >  nodeNumber)
+            if (NetworkInterface?.Nodes?.Count >  nodeNumber)
             {
                 try
                 {
@@ -269,7 +412,7 @@ namespace TIAGroupCopyCLI.Models
         public IoSystem Get_ioSystem(int ioConnectorNumber = 0)
         {
 
-            if (NetworkInterface?.Nodes?.Count() >  ioConnectorNumber)
+            if (NetworkInterface?.Nodes?.Count >  ioConnectorNumber)
             {
                 try
                 {
@@ -299,7 +442,7 @@ namespace TIAGroupCopyCLI.Models
         }
         public void DisconnectFromSubnet(int nodeNumber = 0)
         {
-            if (NetworkInterface?.Nodes?.Count() >  nodeNumber)
+            if (NetworkInterface?.Nodes?.Count >  nodeNumber)
             {
                 try
                 {
@@ -313,7 +456,7 @@ namespace TIAGroupCopyCLI.Models
 
         public void ConnectToSubnet(Subnet aSubnet, int nodeNumber = 0)
         {
-            if ((NetworkInterface?.Nodes?.Count() >  nodeNumber) && (aSubnet != null) )
+            if ((NetworkInterface?.Nodes?.Count >  nodeNumber) && (aSubnet != null) )
             {
                 NetworkInterface.Nodes[nodeNumber].ConnectToSubnet(aSubnet);
             }
@@ -321,22 +464,22 @@ namespace TIAGroupCopyCLI.Models
          
         public void ConnectToIoSystem(IoSystem aIoSystem, int ioConnectorNumber = 0)
         {
-            if ((NetworkInterface?.IoConnectors?.Count() >  ioConnectorNumber) && (aIoSystem != null))
+            if ((NetworkInterface?.IoConnectors?.Count >  ioConnectorNumber) && (aIoSystem != null))
             {
                 NetworkInterface.IoConnectors[ioConnectorNumber].ConnectToIoSystem(aIoSystem);
             }
         }
 
-        public IoSystem CreateNewIoSystem(Subnet aSubnet, string aPrefix, int ioConnectorNumber = 0, int nodeNumber = 0)
+        public IoSystem CreateNewIoSystem(Subnet aSubnet, int ioConnectorNumber = 0, int nodeNumber = 0)
         {
             try
             {
-                if ((NetworkInterface?.IoConnectors?.Count() >  ioConnectorNumber) && (NetworkInterface?.Nodes?.Count() >  nodeNumber) && (aSubnet != null))
+                if ((NetworkInterface?.IoConnectors?.Count >  ioConnectorNumber) && (NetworkInterface?.Nodes?.Count >  nodeNumber) && (aSubnet != null))
                 {
                     string IoSystemName = NetworkInterface.IoControllers[0].IoSystem.Name;
                     NetworkInterface.Nodes[nodeNumber].DisconnectFromSubnet();
                     NetworkInterface.Nodes[nodeNumber].ConnectToSubnet(aSubnet);
-                    IoSystem newIoSystem = NetworkInterface.IoControllers[ioConnectorNumber].CreateIoSystem(aPrefix + IoSystemName);
+                    IoSystem newIoSystem = NetworkInterface.IoControllers[ioConnectorNumber].CreateIoSystem(IoSystemName);
                     return newIoSystem;
                 }
 
@@ -385,6 +528,8 @@ namespace TIAGroupCopyCLI.Models
 
         public static List<ManageNetworkInterface> GetAll_ManageNetworkInterfaceObjects(Device device)
         {
+            if (device == null ) throw new ArgumentNullException(nameof(device), "Invalid device");
+
             List<ManageNetworkInterface> returnManageNetworkInterfaceObjects = new List<ManageNetworkInterface>();
 
             foreach (DeviceItem currentDeviceItem in device.DeviceItems)

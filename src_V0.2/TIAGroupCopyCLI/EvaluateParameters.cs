@@ -24,7 +24,7 @@ namespace TIAGroupCopyCLI.Para
         //public uint StartGroupNum ;
         public string DevicePrefix;
         public uint NumOfGroups;
-        public string IndexFormat = "D2";
+        public string IndexFormat = "D1";
         public uint FBaseAddrOffset ;
         public uint FDestAddrOffset;
         //public uint IDeviceDeviceNumberOffset = 0;
@@ -124,10 +124,23 @@ namespace TIAGroupCopyCLI.Para
             //uint numberCount = 0;
 
             Match foundGroupNum = Regex.Match(argGroupName, "\\d+$", RegexOptions.IgnoreCase);
-            TemplateGroupNumber = UInt32.Parse(foundGroupNum?.Value??"0",  CultureInfo.InvariantCulture);
-            int digitCount_TemplateGroupNameNumber = foundGroupNum?.Value?.Length ?? 0;
+            
+            int digitCount_TemplateGroupNameNumber = 0;
             if (foundGroupNum.Success)
             {
+                TemplateGroupNumber = UInt32.Parse(foundGroupNum.Value, CultureInfo.InvariantCulture);
+                if (TemplateGroupNumber != 1)
+                {
+                    Messaging.FaultMessage("The tempalte group name has to be either:");
+                    Messaging.Progress("        1) A group with no number and prefixes (e.g. (Group_, -plc)");
+                    Messaging.Progress("        2) A group with number 1 and the number 1 used in the prefix (e.g. Group_01, agv01-plc).");
+                    PrintArg(aArgs);
+                    Messaging.Progress("");
+                    Description();
+                    throw new ParameterException();
+                }
+
+                digitCount_TemplateGroupNameNumber = foundGroupNum.Value.Length;
                 GroupNamePrefix = argGroupName.TrimEnd(foundGroupNum.Value.ToCharArray());
                 TemplateGroupName = argGroupName;
             }
@@ -138,32 +151,6 @@ namespace TIAGroupCopyCLI.Para
             }
 
 
-            //while ( (argGroupName.Length > 0 ) && Char.IsDigit(argGroupName,argGroupName.Length - 1) )
-            //{
-            //    GroupNameIsStartGroup = true;
-            //    StartGroupNum = StartGroupNum + factor * ((uint)argGroupName[argGroupName.Length - 1] - 48 );
-            //    argGroupName = argGroupName.Substring(0, argGroupName.Length - 1);
-            //    factor *= 10;
-            //    numberCount += 1;
-            //}
-            //if (GroupNameIsStartGroup)
-            //{
-
-            //    TemplateGroupName = aArgs[currentArgIdx];
-            //    NewGroupNamePrefix = argGroupName;
-            //    IndexFormat = 'D' + numberCount.ToString("D1");
-            //}
-            //else
-            //{
-            //StartGroupNum = 1;
-            //    GroupNamePrefix = aArgs[currentArgIdx];
-                
-
-                //while (TemplateGroupName[TemplateGroupName.Length - 1].Equals(' '))
-                //{
-                //    TemplateGroupName = TemplateGroupName.Substring(0, TemplateGroupName.Length - 1);
-                //}
-            //}
             #endregion
 
             #region Argument DevicePrefix
@@ -297,11 +284,11 @@ namespace TIAGroupCopyCLI.Para
             Messaging.Progress("1. ProjectPath           = path and name of project");
             Messaging.Progress("                           (e.g. C:\\Projects\\MyProject\\MyProjects.ap15_1)");
             Messaging.Progress("2. GroupName             = name of exiting template group in project");
-            Messaging.Progress("                           (e.g. Group_ ");
+            Messaging.Progress("                           (e.g. Group_ , Group_1 , Group_01)");
             Messaging.Progress("3. DevicePrefix          = Text to be added in fron of device name");
-            Messaging.Progress("                           (e.g. AGV, so _plc will become AGV01_plc");
+            Messaging.Progress("                           (e.g. AGV, so _plc will become AGV01_plc)");
             Messaging.Progress("4. NumberOfGroups        = how many groups do you want to end up with");
-            Messaging.Progress("                           including the template group");
+            Messaging.Progress("                           (including the template group)");
             Messaging.Progress("5. FBaseAddrOffset       = by what increment should the central FBaseAddr");
             Messaging.Progress("                           of the PLC be increamented");
             Messaging.Progress("6. FDestAddrOffset       = by what increment should the type 1 F-Dest Address");
@@ -320,19 +307,6 @@ namespace TIAGroupCopyCLI.Para
         }
 
 
-        //public string ProjectPath;
-        //public string ProjectVersion;
-        //public string TemplateGroupName;
-        //public uint TemplateGroupNumber;
-        //public string GroupNamePrefix;
-
-        //public string DevicePrefix;
-        //public uint NumOfGroups;
-        //public string IndexFormat = "D2";
-        //public uint FBaseAddrOffset;
-
-        //public uint IDeviceIoAddressOffset;
-
         private void PrintSettings()
         {
 
@@ -342,10 +316,13 @@ namespace TIAGroupCopyCLI.Para
             Messaging.Progress("ProjectPath           = " + ProjectPath);
             Messaging.Progress("Project Version       = " + ProjectVersion);
             Messaging.Progress("TemplateGroupName     = " + TemplateGroupName);
+            Messaging.Progress("GroupNamePrefix       = " + GroupNamePrefix);
+            
             if (TemplateGroupNumber>0)
             {
             Messaging.Progress("TemplateGroupNumber   = " + TemplateGroupNumber);
             }
+            
             Messaging.Progress("NumberFormat          = " + IndexFormat + " ( => " + ((uint)0).ToString(IndexFormat, CultureInfo.InvariantCulture) + " )") ;
             Messaging.Progress("DevicePrefix          = " + DevicePrefix);
             Messaging.Progress("NumberOfGroups        = " + NumOfGroups);
@@ -364,31 +341,31 @@ namespace TIAGroupCopyCLI.Para
             if (aArgs == null) return;
             Messaging.Progress("Command line arguments:");
             Messaging.Progress("");
-            Messaging.Progress((currentArgIdx + 1) + ". ProjectPath        = " + aArgs[currentArgIdx]);
+            Messaging.Progress((currentArgIdx + 1) + ". ProjectPath           = " + aArgs[currentArgIdx]);
 
             currentArgIdx++;
             if (aArgs.Length < currentArgIdx) return;
-            Messaging.Progress((currentArgIdx + 1) + ". GroupName          = " + aArgs[currentArgIdx]);
+            Messaging.Progress((currentArgIdx + 1) + ". GroupName             = " + aArgs[currentArgIdx]);
 
             currentArgIdx++;
             if (aArgs.Length < currentArgIdx) return;
-            Messaging.Progress((currentArgIdx + 1) + ". DevicePrefix       = " + aArgs[currentArgIdx]);
+            Messaging.Progress((currentArgIdx + 1) + ". DevicePrefix          = " + aArgs[currentArgIdx]);
 
             currentArgIdx++;
             if (aArgs.Length < currentArgIdx) return;
-            Messaging.Progress((currentArgIdx + 1) + ". NumberOfGroups     = " + aArgs[currentArgIdx]);
+            Messaging.Progress((currentArgIdx + 1) + ". NumberOfGroups        = " + aArgs[currentArgIdx]);
 
             currentArgIdx++;
             if (aArgs.Length < currentArgIdx) return;
-            Messaging.Progress((currentArgIdx + 1) + ". FBaseAddrOffset    = " + aArgs[currentArgIdx]);
+            Messaging.Progress((currentArgIdx + 1) + ". FBaseAddrOffset       = " + aArgs[currentArgIdx]);
 
             currentArgIdx++;
             if (aArgs.Length < currentArgIdx) return;
-            Messaging.Progress((currentArgIdx + 1) + ". FDestAddrOffset    = " + aArgs[currentArgIdx]);
+            Messaging.Progress((currentArgIdx + 1) + ". FDestAddrOffset       = " + aArgs[currentArgIdx]);
 
             currentArgIdx++;
             if (aArgs.Length < currentArgIdx) return;
-            Messaging.Progress((currentArgIdx + 1) + ". IDeviceIoAddrOffset    = " + aArgs[currentArgIdx]);
+            Messaging.Progress((currentArgIdx + 1) + ". IDeviceIoAddrOffset   = " + aArgs[currentArgIdx]);
 
         }
 

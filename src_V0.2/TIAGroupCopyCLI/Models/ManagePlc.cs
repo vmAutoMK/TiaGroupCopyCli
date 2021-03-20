@@ -144,7 +144,7 @@ namespace TIAGroupCopyCLI.Models
             return (lowerFDest, upperFDest);
         }
 
-        public new void RestoreConfig_WithAdjustments(string prefix, ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest)
+        public new void RestoreConfig_WithAdjustments(ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest)
         {
             if (CentralFSourceAddress_attribue != null)
             {
@@ -153,32 +153,33 @@ namespace TIAGroupCopyCLI.Models
                 UpperBoundForFDestinationAddresses_attribue.RestoreWithOffset(fDestOffset);
             }
 
-            base.RestoreConfig_WithAdjustments(prefix, pnDeviceNumberOffset, fSourceOffset, fDestOffset, lowerFDest, upperFDest);
+            base.RestoreConfig_WithAdjustments(pnDeviceNumberOffset, fSourceOffset, fDestOffset, lowerFDest, upperFDest);
         }
 
-        public void StripGroupNumAndPrefixFromIoSytem(string devicePrefix)
+        public override void StripGroupNumAndPrefix(string devicePrefix)
         {
-
+            base.StripGroupNumAndPrefix(devicePrefix);
             if (NetworkInterfaces.Count > 0)
             {
-                NetworkInterfaces[0].StripGroupNumAndPrefix(devicePrefix);
+                NetworkInterfaces[0].StripGroupNumAndPrefixFromIoSystemName(devicePrefix);
             }
-
-
         }
 
-
-        public void AddPrefixToIoSystemName(string aPrefix)
+        public override void RestoreGroupNumAndPrefix()
         {
-            try
+            base.RestoreGroupNumAndPrefix();
+            if (NetworkInterfaces.Count > 0)
             {
-                if (NetworkInterfaces.Count>0)
-                {
-                    NetworkInterfaces[0].AddPrefixToIoSystemName(aPrefix);
-                }
+                NetworkInterfaces[0].RestoreGroupNumAndPrefixToIoSystemName();
             }
-            catch
+        }
+
+        public override void ChangeGroupNumAndPrefix(string devicePrefix, string groupNumber)
+        {
+            base.ChangeGroupNumAndPrefix(devicePrefix, groupNumber);
+            if (NetworkInterfaces.Count > 0)
             {
+                NetworkInterfaces[0].ChangeGroupNumAndPrefixToIoSystemName(devicePrefix, groupNumber);
             }
         }
 
@@ -229,9 +230,9 @@ namespace TIAGroupCopyCLI.Models
             }
         }
                      
-        public IoSystem CreateNewIoSystem(Subnet aSubnet, string aPrefix, int aNetworkInterfaceNumber = 0)
+        public IoSystem CreateNewIoSystem(Subnet aSubnet, int aNetworkInterfaceNumber = 0)
         {
-            IoSystem newIoSystem = NetworkInterfaces[aNetworkInterfaceNumber]?.CreateNewIoSystem(aSubnet, aPrefix);
+            IoSystem newIoSystem = NetworkInterfaces[aNetworkInterfaceNumber]?.CreateNewIoSystem(aSubnet);
             return newIoSystem;
         }
 

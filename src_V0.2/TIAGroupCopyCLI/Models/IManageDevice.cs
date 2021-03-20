@@ -57,13 +57,13 @@ namespace TIAGroupCopyCLI.Models
 
         void SaveConfig();
 
-        void RestoreConfig_WithAdjustments(string prefix, ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest);
+        void RestoreConfig_WithAdjustments(ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest);
 
         void StripGroupNumAndPrefix(string devicePrefix);
 
-        void AddPrefixToTiaName(string aPrefix);
+        void RestoreGroupNumAndPrefix();
 
-        void AddPrefixToPnDeviceName(string aPrefix);
+        void ChangeGroupNumAndPrefix(string devicePrefix, string groupNumber);
 
         void AddOffsetToIpAddresse(ulong aIpOffset);
 

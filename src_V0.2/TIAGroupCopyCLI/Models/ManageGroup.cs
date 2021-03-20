@@ -46,9 +46,8 @@ namespace TIAGroupCopyCLI.Models
         ulong lowerFDest;
         ulong upperFDest;
 
-        string currentPrefix;  //TODO delete
-        string currentGroupName; //TODO delete
-        readonly string orignalGroupName;//TODO use
+        //readonly string currentPrefix;  //TODO delete
+        readonly string originalGroupName;//TODO use
         string templateGroupName;//TODO use
 
         #endregion Fields
@@ -88,22 +87,11 @@ namespace TIAGroupCopyCLI.Models
         #endregion
 
         #region Constructor
-        public ManageGroup(DeviceUserGroup deviceUserGroup, string newGroupName, string prefix, uint groupCounter, string indexFormat)
-        {
-            tiaGroup = deviceUserGroup;
-            GetAll_DevicesInGroup(tiaGroup);
-
-            orignalGroupName = tiaGroup.Name;
-            currentPrefix = prefix + groupCounter.ToString(indexFormat, CultureInfo.InvariantCulture);
-            currentGroupName = newGroupName + groupCounter.ToString(indexFormat, CultureInfo.InvariantCulture);
-
-            //TODO : maybe delete
-        }
 
         public ManageGroup(DeviceUserGroup deviceUserGroup)
         {
             tiaGroup = deviceUserGroup;
-            orignalGroupName = tiaGroup.Name;
+            originalGroupName = tiaGroup.Name;
 
             GetAll_DevicesInGroup(tiaGroup);
             
@@ -184,16 +172,6 @@ namespace TIAGroupCopyCLI.Models
 
         }
 
-        public  void xSavePlcConfigInTemplate()
-        {
-            foreach (ManagePlc currentPLC in Devices.Where(d => d.DeviceType == DeviceType.Plc))
-            {
-                currentPLC.SaveConfig();
-            }
-            originalSubnet = Plc.Get_Subnet();
-            masterIoSystem = Plc.Get_ioSystem();
-        }
-
         public void CopyFromTemplate(ManageGroup tempateGroup)
         {
             int i = 0;
@@ -212,13 +190,13 @@ namespace TIAGroupCopyCLI.Models
         {
             foreach (ManagePlc currentPLC in Devices.Where(d => d.DeviceType == DeviceType.Plc))
             {
-                currentPLC.RestoreConfig_WithAdjustments(currentPrefix, pnDeviceNumberOffset, fSourceOffset, fDestOffset, lowerFDest, upperFDest);
+                currentPLC.RestoreConfig_WithAdjustments(pnDeviceNumberOffset, fSourceOffset, fDestOffset, lowerFDest, upperFDest);
                 currentPLC.Restore_iDeviceParnerAdresses(iDeviceOffset);
             }
             foreach (IManageDevice currentDevice in Devices.Where(d => d.DeviceType != DeviceType.Plc))
             {
                 currentDevice.Reconnect(masterSubnet, newIoSystem);
-                currentDevice.RestoreConfig_WithAdjustments(currentPrefix, 0, fSourceOffset, fDestOffset, lowerFDest, upperFDest);
+                currentDevice.RestoreConfig_WithAdjustments( 0, fSourceOffset, fDestOffset, lowerFDest, upperFDest);
             }
             foreach (ManagePlc currentPLC in Devices.Where(d => d.DeviceType == DeviceType.Plc))
             {
@@ -229,7 +207,7 @@ namespace TIAGroupCopyCLI.Models
         public void StripGroupNumAndPrefix(string devicePrefix)
         {
 
-            Match findTemplateGroupName = Regex.Match(orignalGroupName, ".*?\\D(?=\\d*$)", RegexOptions.IgnoreCase);
+            Match findTemplateGroupName = Regex.Match(originalGroupName, ".*?\\D(?=\\d*$)", RegexOptions.IgnoreCase);
 
             if (findTemplateGroupName.Success)
             {
@@ -244,10 +222,10 @@ namespace TIAGroupCopyCLI.Models
             tiaGroup.Name = templateGroupName;
             if (tiaGroup.Name != templateGroupName)
             {
-                throw new GroupCopyException($"Could not rename selected template group \"{orignalGroupName}\" to generic group name \"{templateGroupName}\", probably because a group with that name already exits.");
+                throw new GroupCopyException($"Could not rename selected template group \"{originalGroupName}\" to generic group name \"{templateGroupName}\", probably because a group with that name already exits.");
             }
 
-            Plc?.StripGroupNumAndPrefixFromIoSytem(devicePrefix);
+            //Plc?.StripGroupNumAndPrefixFromIoSytem(devicePrefix);
 
             foreach (IManageDevice currentDevice in Devices)
             {
@@ -256,21 +234,62 @@ namespace TIAGroupCopyCLI.Models
 
         }
 
-        public void ChangeNames()
+
+        public void RestoreGroupNumAndPrefix()
         {
 
-            tiaGroup.Name = currentGroupName;
-            //templateNetworkInterface.IoControllers[0].IoSystem.Name = currentPrefix + temlateIoSystemName;
+            if (originalGroupName.Length == 0)
+            {
+                throw new ProgrammingException($"Could not restore TIA object of template Group because the orignal name is blank \"{originalGroupName}\".");
+            }
 
-            Plc?.AddPrefixToIoSystemName(currentPrefix);
+
+            tiaGroup.Name = originalGroupName;
+            if (tiaGroup.Name != originalGroupName)
+            {
+                throw new GroupCopyException($"Could not rename selected template group \"{templateGroupName}\" back to original group name \"{originalGroupName}\".");
+            }
+
+            //Plc?.StripGroupNumAndPrefixFromIoSytem(devicePrefix);
 
             foreach (IManageDevice currentDevice in Devices)
             {
-                currentDevice.AddPrefixToTiaName(currentPrefix);
-                currentDevice.AddPrefixToPnDeviceName(currentPrefix);
+                currentDevice.RestoreGroupNumAndPrefix();
+                
             }
 
         }
+
+        public void ChangeGroupNumAndPrefix(string devicePrefix, string groupNumber)
+        {
+            if (groupNumber.Length == 0 )
+            {
+                throw new ProgrammingException($"Could not change TIA Name of object because of invalid group number.");
+            }
+            //tiaGroup.Name = currentGroupName;
+            //templateNetworkInterface.IoControllers[0].IoSystem.Name = currentPrefix + temlateIoSystemName;
+            string newGroupName = Regex.Replace(tiaGroup.Name, "temp$", groupNumber);
+            if (newGroupName.Length == 0)
+            {
+                throw new GroupCopyException($"Could not change TIA Name of object.");
+            }
+            tiaGroup.Name = newGroupName;
+            if (tiaGroup.Name != newGroupName)
+            {
+                throw new GroupCopyException($"Could not rename selected template group \"{templateGroupName}\" back to original group name \"{newGroupName}\".");
+            }
+
+            //Plc?.AddPrefixToIoSystemName(currentPrefix);
+
+            foreach (IManageDevice currentDevice in Devices)
+            {
+                //currentDevice.xAddPrefixToTiaName(currentPrefix);
+                //currentDevice.xAddPrefixToPnDeviceName(currentPrefix);
+                currentDevice.ChangeGroupNumAndPrefix(devicePrefix, groupNumber);
+            }
+
+        }
+
 
         public void ChangeIpAddresses(ulong aIpOffset)
         {
@@ -292,7 +311,7 @@ namespace TIAGroupCopyCLI.Models
 
         public void CreateNewIoSystem(Subnet aSubnet)
         {
-            newIoSystem = Plc?.CreateNewIoSystem(aSubnet, currentPrefix);
+            newIoSystem = Plc?.CreateNewIoSystem(aSubnet);
             masterSubnet = aSubnet;
         }
 

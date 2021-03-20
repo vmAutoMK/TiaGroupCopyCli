@@ -29,6 +29,7 @@ using Siemens.Engineering.MC.Drives;
 using System.IO;
 
 using TIAGroupCopyCLI;
+using TIAGroupCopyCLI.AppExceptions;
 
 namespace TIAHelper.Services
 {
@@ -38,13 +39,18 @@ namespace TIAHelper.Services
     public static class Service
     {
 
-        public static void OpenProject(string ProjectPath, ref TiaPortal tiaPortal, ref Project project, ref bool tiaStartedWithoutInterface)
+        public static TiaPortal OpenProject(string ProjectPath, out Project project, out bool tiaStartedWithoutInterface)
         {
 
             //First check if project already open
+            TiaPortal tiaPortal = null;
+            project = null;
+            tiaStartedWithoutInterface = false;
+
 
             foreach (TiaPortalProcess tiaPortalProcess in TiaPortal.GetProcesses())
             {
+
                 string currentProjectPath = ((tiaPortalProcess.ProjectPath != null && !string.IsNullOrEmpty(tiaPortalProcess.ProjectPath.FullName)) ? Path.GetFullPath(tiaPortalProcess.ProjectPath.FullName) : "None");
                 Console.WriteLine("tiaPortalProcess: " + tiaPortalProcess.Mode);
                 Console.WriteLine("ProjectPath: " + currentProjectPath);
@@ -62,19 +68,17 @@ namespace TIAHelper.Services
                         {
                             tiaStartedWithoutInterface = true;
                         }
-                        return;
+                        return tiaPortal;
                     }
                     catch (Siemens.Engineering.EngineeringSecurityException e)
                     {
                         tiaPortal = null;
                         project = null;
-                        Program.CancelGeneration("Could not start TIAP. Please achnoledge the \"Openness access\" security dialog box with [Yes] or [Yes to all] to grant access or if there was no dialog box add the user to the user group \"Siemens TIA Openness\". (see exception message below for details)", e);
-                        return;
+                        throw new GroupCopyException("Could not start TIAP. Please achnoledge the \"Openness access\" security dialog box with [Yes] or [Yes to all] to grant access or if there was no dialog box add the user to the user group \"Siemens TIA Openness\". (see exception message below for details)", e);
                     }
                     catch (Exception e)
                     {
-                        Program.CancelGeneration("Could not attach to running TIAP with open project.", e);
-                        project = null;
+                        throw new GroupCopyException("Could not attach to running TIAP with open project.", e);
 
                     }
 
@@ -95,13 +99,11 @@ namespace TIAHelper.Services
                 {
                     tiaPortal = null;
                     project = null;
-                    Program.CancelGeneration("Could not start TIAP. Please achnoledge the \"Openness access\" security dialog box with [Yes] or [Yes to all] to grant access or if there was no dialog box add the user to the user group \"Siemens TIA Openness\". (see exception message below for details)", e);
-                    return;
+                    throw new GroupCopyException("Could not start TIAP. Please achnoledge the \"Openness access\" security dialog box with [Yes] or [Yes to all] to grant access or if there was no dialog box add the user to the user group \"Siemens TIA Openness\". (see exception message below for details)", e);
                 }
                 catch (Exception e)
                 {
-                    Program.CancelGeneration("Could not start TIAP.", e);
-                    return;
+                    throw new GroupCopyException("Could not start TIAP.", e);
                 }
 
                 Console.WriteLine("TIA Portal has started");
@@ -115,13 +117,13 @@ namespace TIAHelper.Services
                 }
                 catch (Exception e)
                 {
-                    Program.CancelGeneration("Could not open project " + projectPath.FullName, e);
-                    return;
+                    throw new GroupCopyException("Could not open project " + projectPath.FullName, e);
                 }
             }
 
+            return tiaPortal;
         }
-
+        
 
     }
 }

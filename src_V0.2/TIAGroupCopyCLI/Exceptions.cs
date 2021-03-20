@@ -32,4 +32,17 @@ namespace TIAGroupCopyCLI.AppExceptions
         protected GroupCopyException(System.Runtime.Serialization.SerializationInfo info,
             System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
     }
+
+
+    public class ProgrammingException : Exception
+    {
+        public ProgrammingException() : base() { }
+        public ProgrammingException(string message) : base(message) { }
+        public ProgrammingException(string message, Exception inner) : base(message, inner) { }
+
+        // A constructor is needed for serialization when an
+        // exception propagates from a remoting server to the client.
+        protected ProgrammingException(System.Runtime.Serialization.SerializationInfo info,
+            System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
+    }
 }

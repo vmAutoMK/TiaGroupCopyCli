@@ -97,7 +97,7 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
-        public virtual void RestoreConfig_WithAdjustments(string prefix, ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest)
+        public virtual void RestoreConfig_WithAdjustments(ulong pnDeviceNumberOffset, ulong fSourceOffset, ulong fDestOffset, ulong lowerFDest, ulong upperFDest)
         {
             foreach (SingleAttribute currentItem in FDestinationAddress_attribues) 
             {
@@ -108,26 +108,20 @@ namespace TIAGroupCopyCLI.Models
             }
             foreach (ManageNetworkInterface currentItem in NetworkInterfaces)
             {
-                currentItem.RestoreConfig_WithAdjustments(prefix, pnDeviceNumberOffset);
+                currentItem.RestoreConfig_WithAdjustments(pnDeviceNumberOffset);
             }
         }
 
 
-        public void StripGroupNumAndPrefix(string devicePrefix)
+        public virtual void StripGroupNumAndPrefix(string devicePrefix)
         {
             TemplateTiaDeviceName = "temp" + Regex.Replace(OriginalTiaDeviceName, "^" + devicePrefix + "\\d+", "", RegexOptions.IgnoreCase);
-            if (TemplateTiaDeviceName.Length == 0)
-            {
-                ///throw new GroupCopyException($"Invalid name for IO System of template Group \"{OriginalIoSystem0TiaName}\". Can not remove prefix \"{devicePrefix}\" and GroupNumber .");
-
-            }
-
             try
             {
                 Device.DeviceItems[1].Name = TemplateTiaDeviceName;
                 if (Device.DeviceItems[1].Name != TemplateTiaDeviceName)
                 {
-                    throw new GroupCopyException($"Could not rename IO Sytem \"{OriginalTiaDeviceName}\" in selected template group to generic name \"{TemplateTiaDeviceName}\", probably because that name already exsits.");
+                    throw new GroupCopyException($"Could not rename TIA object \"{OriginalTiaDeviceName}\" in selected template group to name \"{TemplateTiaDeviceName}\", probably because that name already exsits.");
                 }
             }
             catch (TIAGroupCopyCLI.AppExceptions.GroupCopyException e)
@@ -138,9 +132,69 @@ namespace TIAGroupCopyCLI.Models
             {
             }
 
+            if (NetworkInterfaces.Count > 0)
+                NetworkInterfaces[0].StripGroupNumAndPrefixFromPnDeviceName(devicePrefix);
+        }
+
+        public virtual void RestoreGroupNumAndPrefix()
+        {
+            if (OriginalTiaDeviceName.Length == 0)
+            {
+                throw new ProgrammingException($"Could not restore TIA object of template Group because the orignal name is blank \"{OriginalTiaDeviceName}\".");
+            }
+
+            try
+            {
+                Device.DeviceItems[1].Name = OriginalTiaDeviceName;
+                if (Device.DeviceItems[1].Name != OriginalTiaDeviceName)
+                {
+                    throw new GroupCopyException($"Could not restore TIA object name in selected template group from \"{TemplateTiaDeviceName}\"  to orignal name \"{OriginalTiaDeviceName}\".");
+                }
+            }
+            catch (TIAGroupCopyCLI.AppExceptions.GroupCopyException e)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+            }
+            if (NetworkInterfaces.Count > 0)
+                NetworkInterfaces[0].RestoreGroupNumAndPrefixToPnDeviceName();
+        }
+
+        public virtual void ChangeGroupNumAndPrefix(string devicePrefix, string groupNumber)
+        {
+            if (groupNumber.Length == 0)
+            {
+                throw new ProgrammingException($"Could not change TIA Name of object because of invalid group number.");
+            }
+
+            try
+            {
+                string newName = Regex.Replace(Device.DeviceItems[1].Name, "^temp", devicePrefix + groupNumber);
+                if (newName.Length == 0)
+                {
+                    throw new GroupCopyException($"Could not change TIA Name of object.");
+                }
+                Device.DeviceItems[1].Name = newName;
+                if (Device.DeviceItems[1].Name != newName)
+                {
+                    throw new GroupCopyException($"Could not chnage TIA object name to \"{newName}\".");
+                }
+            }
+            catch (TIAGroupCopyCLI.AppExceptions.GroupCopyException e)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+            }
+            if (NetworkInterfaces.Count > 0)
+                NetworkInterfaces[0].ChangeGroupNumAndPrefixToPnDeviceName(devicePrefix, groupNumber);
 
         }
-        public void AddPrefixToTiaName(string aPrefix)
+
+        public void xAddPrefixToTiaName(string aPrefix)
         {
             try
             {
@@ -151,10 +205,10 @@ namespace TIAGroupCopyCLI.Models
             }
         }
 
-        public void AddPrefixToPnDeviceName(string aPrefix)
+        public void xAddPrefixToPnDeviceName(string aPrefix)
         {
             if (NetworkInterfaces.Count > 0)
-                NetworkInterfaces[0].AddPrefixToPnDeviceName(aPrefix);
+                NetworkInterfaces[0].xAddPrefixToPnDeviceName(aPrefix);
         }
 
         public void AddOffsetToIpAddresse(ulong aIpOffset)
